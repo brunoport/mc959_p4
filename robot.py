@@ -43,6 +43,7 @@ class Robot:
         _,self.robotPosition = vrep.simxGetObjectPosition(self.clientID, self.handle,-1,vrep.simx_opmode_oneshot_wait);
         _,self.robotOrientation = vrep.simxGetObjectOrientation(self.clientID, self.handle,-1,vrep.simx_opmode_oneshot_wait);
 
+        print "-------------------------------------------------"
         print "robotPosition = " + str(self.robotPosition)
         print "robotOrientation = " + str(self.robotOrientation)
 
@@ -64,9 +65,10 @@ class Robot:
             _,detectedState,self.sonarReading[i],_,_ = vrep.simxReadProximitySensor(self.clientID,self.sonarHandle[i],vrep.simx_opmode_streaming);
             self.sonarReading[i] = self.sonarReading[i][2] if detectedState > 0 else -1
             print "sonarReading["+str(i)+"] = "+str(self.sonarReading[i])
+        print "-------------------------------------------------\n"
 
     def avoidObstacle(self):
         for i in range(2,8):
-            if self.sonarReading[i] > -1 and self.sonarReading[i] < 0.5:
+            if self.sonarReading[i] > -1 and self.sonarReading[i] < 0.4:
                 return 1,-1
         return 2,2
