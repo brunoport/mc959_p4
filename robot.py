@@ -49,7 +49,7 @@ class Robot:
         self.readSonars()
         vLeft, vRight = self.avoidObstacle()
         self.move(vLeft, vRight)
-        
+
 
 
     def move(self, leftMotorVelocity, rightMotorVelocity):
@@ -66,7 +66,7 @@ class Robot:
             print "sonarReading["+str(i)+"] = "+str(self.sonarReading[i])
 
     def avoidObstacle(self):
-        for i in range(3,7):
+        for i in range(2,8):
             if self.sonarReading[i] > -1 and self.sonarReading[i] < 0.5:
                 return 1,-1
         return 2,2
