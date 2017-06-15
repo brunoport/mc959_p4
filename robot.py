@@ -44,8 +44,8 @@ class Robot:
         print "robotPosition = " + str(self.robotPosition)
         print "robotOrientation = " + str(self.robotOrientation)
 
-        self.move(2,2)
         self.readSonars()
+        self.move(2,2)
 
     def move(self, leftMotorVelocity, rightMotorVelocity):
         vrep.simxSetJointTargetVelocity(self.clientID, self.motorHandle[0], leftMotorVelocity, vrep.simx_opmode_streaming);
@@ -53,6 +53,9 @@ class Robot:
 
     def readSonars(self):
         # Reads sonar's current value
+        # if state == 0 then nothing detected and sonar value is -1
+        # otherwise sonar value that matter is only the third coordinate returned
         for i in range(16):
-            _,_,self.sonarReading[i],_,_ = vrep.simxReadProximitySensor(self.clientID,self.sonarHandle[i],vrep.simx_opmode_streaming);
+            _,detectedState,self.sonarReading[i],_,_ = vrep.simxReadProximitySensor(self.clientID,self.sonarHandle[i],vrep.simx_opmode_streaming);
+            self.sonarReading[i] = self.sonarReading[i][2] if detectedState > 0 else -1
             print "sonarReading["+str(i)+"] = "+str(self.sonarReading[i])
