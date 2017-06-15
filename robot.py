@@ -11,6 +11,7 @@ class Robot:
     robotPosition = []
     robotOrientation = []
 
+
     def __init__(self, clientID, name):
         self.clientID = clientID
         self.name = name
@@ -36,6 +37,7 @@ class Robot:
                 # print "Connected to ultrasonicSensor " + str(i+1)
 
 
+
     def run(self):
         # Get the robot current absolute position
         _,self.robotPosition = vrep.simxGetObjectPosition(self.clientID, self.handle,-1,vrep.simx_opmode_oneshot_wait);
@@ -45,7 +47,10 @@ class Robot:
         print "robotOrientation = " + str(self.robotOrientation)
 
         self.readSonars()
-        self.move(2,2)
+        vLeft, vRight = self.avoidObstacle()
+        self.move(vLeft, vRight)
+        
+
 
     def move(self, leftMotorVelocity, rightMotorVelocity):
         vrep.simxSetJointTargetVelocity(self.clientID, self.motorHandle[0], leftMotorVelocity, vrep.simx_opmode_streaming);
@@ -59,3 +64,9 @@ class Robot:
             _,detectedState,self.sonarReading[i],_,_ = vrep.simxReadProximitySensor(self.clientID,self.sonarHandle[i],vrep.simx_opmode_streaming);
             self.sonarReading[i] = self.sonarReading[i][2] if detectedState > 0 else -1
             print "sonarReading["+str(i)+"] = "+str(self.sonarReading[i])
+
+    def avoidObstacle(self):
+        for i in range(3,7):
+            if self.sonarReading[i] > -1 and self.sonarReading[i] < 0.5:
+                return 1,-1
+        return 2,2
