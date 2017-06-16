@@ -1,0 +1,14 @@
+<corredor> <secao> <rgb> <qtd_cubos>
+corredor: 1 a 4
+secao: A a F
+rgb: numero binario de 3 digitos (e.g. 110 = amarelo)
+qtd_cubos: quantidade de cubos na secao
+
+IMPORTANTE: a somatoria de cubos numa secao deve ser igual a 50
+
+-------
+2 C 110 9
+2 C 101 14
+2 C 100 12
+2 C 001 5
+2 C 010 10
