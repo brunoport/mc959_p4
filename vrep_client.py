@@ -11,9 +11,8 @@ if clientID!=-1:
 
     rob.takePicture("Camera_Gondola")
 
-    #while True:
-    #    rob.run()
-
+    while True:
+        rob.run()
     vrep.simxFinish(clientID)
 else:
     print 'Failed connecting to remote API server'
