@@ -1,4 +1,5 @@
-import vrep
+from PIL import Image as I
+import vrep,array,time,sys
 
 class Robot:
     """Classe robo do V-REP"""
@@ -72,3 +73,17 @@ class Robot:
             if self.sonarReading[i] > -1 and self.sonarReading[i] < 0.4:
                 return 1,-1
         return 2,2
+
+    def takePicture(self,visionSensorName,clientID):
+        print 'Taking picture from ' + visionSensorName + '... '
+        res1,visionSensorHandle=vrep.simxGetObjectHandle(clientID,visionSensorName,vrep.simx_opmode_oneshot_wait)
+        res2,resolution,image=vrep.simxGetVisionSensorImage(clientID,visionSensorHandle,0,vrep.simx_opmode_streaming)
+        res,resolution,image=vrep.simxGetVisionSensorImage(clientID,visionSensorHandle,0,vrep.simx_opmode_buffer)
+        time.sleep(0.5)
+        res,resolution,image=vrep.simxGetVisionSensorImage(clientID,visionSensorHandle,0,vrep.simx_opmode_buffer)
+        image_byte_array = array.array('b',image)
+        im = I.frombuffer("RGB", (resolution[1],resolution[0]), image_byte_array, "raw", "RGB", 0, 1)
+        im = im.rotate(180)
+        im = im.transpose(I.FLIP_LEFT_RIGHT)
+        im.save('images/' + visionSensorName + '.png', 'png')
+        print 'done!'
