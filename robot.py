@@ -11,6 +11,8 @@ class Robot:
     sonarReading = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
     robotPosition = []
     robotOrientation = []
+    visionSensorHandles=[0,0,0]
+    visionSensorReading=[-1,-1,-1]
 
 
     def __init__(self, clientID, name):
@@ -28,6 +30,11 @@ class Robot:
         #  Get handles of sensors and actuators
         _,self.motorHandle[0] = vrep.simxGetObjectHandle(clientID, "Pioneer_p3dx_leftMotor", vrep.simx_opmode_oneshot_wait)
         _,self.motorHandle[1] = vrep.simxGetObjectHandle(clientID, "Pioneer_p3dx_rightMotor",vrep.simx_opmode_oneshot_wait)
+
+        # Vision handles
+        _,self.visionSensorHandles[0]=vrep.simxGetObjectHandle(clientID, "Camera_Faixa_Esq", vrep.simx_opmode_oneshot_wait)
+        _,self.visionSensorHandles[1]=vrep.simxGetObjectHandle(clientID, "Camera_Faixa_Meio", vrep.simx_opmode_oneshot_wait)
+        _,self.visionSensorHandles[2]=vrep.simxGetObjectHandle(clientID, "Camera_Faixa_Dir", vrep.simx_opmode_oneshot_wait)
 
         for i in range(16):
             sensorName = "Pioneer_p3dx_ultrasonicSensor" + str(i+1)
@@ -49,6 +56,7 @@ class Robot:
         print "robotOrientation = " + str(self.robotOrientation)
 
         self.readSonars()
+        self.readVision()
         vLeft, vRight = self.avoidObstacle()
         self.move(vLeft, vRight)
 
@@ -68,6 +76,14 @@ class Robot:
             print "sonarReading["+str(i)+"] = "+str(self.sonarReading[i])
         print "-------------------------------------------------\n"
 
+    def readVision(self):
+        for i in range (3):
+            err,detectedState,data=vrep.simxReadVisionSensor(self.clientID,self.visionSensorHandles[i], vrep.simx_opmode_streaming)
+            if len(data) > 0:
+                self.visionSensorReading[i]=(data[0][11]<0.3) # data[11] is the average of intensity of the image
+                # TRUE: sensor esta sobre a linha preta
+            	print 'avg camera '+str(i)+' = ' + str(self.visionSensorReading[i])
+    
     def avoidObstacle(self):
         for i in range(2,8):
             if self.sonarReading[i] > -1 and self.sonarReading[i] < 0.4:
