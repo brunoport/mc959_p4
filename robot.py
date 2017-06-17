@@ -12,7 +12,7 @@ class Robot:
     robotPosition = []
     robotOrientation = []
     visionSensorHandles=[0,0,0]
-    visionSensorReading=[-1,-1,-1]
+    visionSensorReading=[False,False,False]
 
 
     def __init__(self, clientID, name):
@@ -55,9 +55,10 @@ class Robot:
         print "robotPosition = " + str(self.robotPosition)
         print "robotOrientation = " + str(self.robotOrientation)
 
-        self.readSonars()
+        #self.readSonars()
         self.readVision()
-        vLeft, vRight = self.avoidObstacle()
+        #vLeft, vRight = self.avoidObstacle()
+        vLeft, vRight = self.followLine()
         self.move(vLeft, vRight)
 
 
@@ -82,7 +83,17 @@ class Robot:
             if len(data) > 0:
                 self.visionSensorReading[i]=(data[0][11]<0.3) # data[11] is the average of intensity of the image
                 # TRUE: sensor esta sobre a linha preta
-            	print 'avg camera '+str(i)+' = ' + str(self.visionSensorReading[i])
+                print 'avg camera '+str(i)+' = ' + str(self.visionSensorReading[i])
+    
+    def followLine(self):
+        print self.visionSensorReading
+        if self.visionSensorReading[0]:
+            return 1,2
+        if self.visionSensorReading[1]:
+            return 2,2
+        if self.visionSensorReading[2]:
+            return 2,1
+        return 2,2
     
     def avoidObstacle(self):
         for i in range(2,8):
