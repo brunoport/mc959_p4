@@ -13,11 +13,17 @@ class Robot:
     robotOrientation = []
     visionSensorHandles=[0,0,0]
     visionSensorReading=[False,False,False]
-
-
+    corredor=2
+    faixaASeguir=0
+    countFaixas=0
+    bifurcacao = False
+    entrar = False
+    countdown = 0
+    
     def __init__(self, clientID, name):
         self.clientID = clientID
         self.name = name
+        self.faixaASeguir = self.corredor*2-1
         print "initializing robot... "
 
         # Get robot handle
@@ -51,21 +57,44 @@ class Robot:
         _,self.robotPosition = vrep.simxGetObjectPosition(self.clientID, self.handle,-1,vrep.simx_opmode_oneshot_wait);
         _,self.robotOrientation = vrep.simxGetObjectOrientation(self.clientID, self.handle,-1,vrep.simx_opmode_oneshot_wait);
 
-        print "-------------------------------------------------"
-        print "robotPosition = " + str(self.robotPosition)
-        print "robotOrientation = " + str(self.robotOrientation)
+        #print "-------------------------------------------------"
+        #print "robotPosition = " + str(self.robotPosition)
+        #print "robotOrientation = " + str(self.robotOrientation)
 
         #self.readSonars()
         self.readVision()
         #vLeft, vRight = self.avoidObstacle()
+        self.bifurcacao = self.checkBifurcacao()
+        if self.bifurcacao:
+            self.faixaASeguir-=1
+            print "BIFURCACAO " + str(self.bifurcacao)
+            print "ENTRAR DAQUI " + str(self.faixaASeguir)
+            if self.faixaASeguir == 0:
+                print "ENTRAR AQUI ============>"
+                self.entrar = True
+            else:
+                print "NAO EH ESSA AINDA"
+                self.entrar = False
+                self.move(2, 2)
+                time.sleep(5)
+                return
         vLeft, vRight = self.followLine()
         self.move(vLeft, vRight)
 
+    
+    def followLine(self):
+        if not self.entrar and self.visionSensorReading[1]:#meio
+            return 2,2
+        if self.entrar or self.visionSensorReading[2]:#direita
+            return 2,1
+        if self.visionSensorReading[0]:#esquerda
+            return 1,2
+        return 2,2
 
 
     def move(self, leftMotorVelocity, rightMotorVelocity):
-        vrep.simxSetJointTargetVelocity(self.clientID, self.motorHandle[0], leftMotorVelocity, vrep.simx_opmode_streaming);
-        vrep.simxSetJointTargetVelocity(self.clientID, self.motorHandle[1], rightMotorVelocity, vrep.simx_opmode_streaming);
+        vrep.simxSetJointTargetVelocity(self.clientID, self.motorHandle[0], leftMotorVelocity, vrep.simx_opmode_oneshot);
+        vrep.simxSetJointTargetVelocity(self.clientID, self.motorHandle[1], rightMotorVelocity, vrep.simx_opmode_oneshot);
 
     def readSonars(self):
         # Reads sonar's current value
@@ -74,26 +103,28 @@ class Robot:
         for i in range(16):
             _,detectedState,self.sonarReading[i],_,_ = vrep.simxReadProximitySensor(self.clientID,self.sonarHandle[i],vrep.simx_opmode_streaming);
             self.sonarReading[i] = self.sonarReading[i][2] if detectedState > 0 else -1
-            print "sonarReading["+str(i)+"] = "+str(self.sonarReading[i])
-        print "-------------------------------------------------\n"
+            #print "sonarReading["+str(i)+"] = "+str(self.sonarReading[i])
+        #print "-------------------------------------------------\n"
 
     def readVision(self):
         for i in range (3):
             err,detectedState,data=vrep.simxReadVisionSensor(self.clientID,self.visionSensorHandles[i], vrep.simx_opmode_streaming)
             if len(data) > 0:
-                self.visionSensorReading[i]=(data[0][11]<0.3) # data[11] is the average of intensity of the image
+                self.visionSensorReading[i]=(data[0][11]<0.1) # data[11] is the average of intensity of the image
                 # TRUE: sensor esta sobre a linha preta
-                print 'avg camera '+str(i)+' = ' + str(self.visionSensorReading[i])
+                #print 'avg camera '+str(i)+' = ' + str(self.visionSensorReading[i])
     
-    def followLine(self):
+    def checkBifurcacao(self):    
+        self.countFaixas = 0            
         print self.visionSensorReading
-        if self.visionSensorReading[0]:
-            return 1,2
-        if self.visionSensorReading[1]:
-            return 2,2
-        if self.visionSensorReading[2]:
-            return 2,1
-        return 2,2
+        if not self.bifurcacao:
+            for i in range(3):
+                if self.visionSensorReading[i]:
+                    self.countFaixas+=1
+                if self.countFaixas==2:
+                    self.countFaixas = 0
+                    return True
+        return False
     
     def avoidObstacle(self):
         for i in range(2,8):
