@@ -1,5 +1,6 @@
 from PIL import Image as I
 import vrep,array,time,sys
+import threading
 
 class Robot:
     """Classe robo do V-REP"""
@@ -19,6 +20,9 @@ class Robot:
     bifurcacao = False
     entrar = False
     countdown = 0
+    sobreBifurcacao = False
+
+    andaRetoCount = 0;
     
     def __init__(self, clientID, name):
         self.clientID = clientID
@@ -50,7 +54,9 @@ class Robot:
             # else:
                 # print "Connected to ultrasonicSensor " + str(i+1)
 
-
+    def resetFaixaASeguir(self):
+        print "RESET FAIXA"
+        self.faixaASeguir = 2;
 
     def run(self):
         # Get the robot current absolute position
@@ -65,30 +71,47 @@ class Robot:
         self.readVision()
         #vLeft, vRight = self.avoidObstacle()
         self.bifurcacao = self.checkBifurcacao()
-        if self.bifurcacao:
+        if self.bifurcacao and not self.sobreBifurcacao:
             self.faixaASeguir-=1
+            self.sobreBifurcacao = True
             print "BIFURCACAO " + str(self.bifurcacao)
             print "ENTRAR DAQUI " + str(self.faixaASeguir)
             if self.faixaASeguir == 0:
                 print "ENTRAR AQUI ============>"
                 self.entrar = True
+                self.andaRetoCount = 0
+                self.faixaASeguir=1#errado
             else:
                 print "NAO EH ESSA AINDA"
                 self.entrar = False
                 self.move(2, 2)
-                time.sleep(5)
+                self.countdown = 10
                 return
+        elif not self.bifurcacao:
+            self.countdown -=1
+        
+        if self.countdown>0:
+            return
+        self.sobreBifurcacao = False
+        entrar = False
         vLeft, vRight = self.followLine()
         self.move(vLeft, vRight)
 
+
+
     
     def followLine(self):
-        if not self.entrar and self.visionSensorReading[1]:#meio
-            return 2,2
-        if self.entrar or self.visionSensorReading[2]:#direita
+        if self.visionSensorReading[2]:#direita
             return 2,1
-        if self.visionSensorReading[0]:#esquerda
+        if not self.entrar and self.visionSensorReading[0]:#esquerda
             return 1,2
+
+        self.andaRetoCount += 1
+
+        if self.andaRetoCount ==10 and self.entrar:
+            self.faixaASeguir = 1
+            print "RESET FAIXA"
+
         return 2,2
 
 
