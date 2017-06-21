@@ -27,7 +27,7 @@ class Robot:
     entrar = False
     countdown = 0
     sobreBifurcacao = False
-    
+
     def __init__(self, clientID, name):
         self.clientID = clientID
         self.name = name
@@ -67,7 +67,7 @@ class Robot:
 
         self.updateEncoders()
         dist = self.distanceForward()
-        print "\n-----------------angularDiff = " + str(self.angularDiff)+" dist = "+str(dist)+"\n pos = "+str(self.robotPosition)+"------------------\n"
+        print "\n-----------------\nangularDiff = " + str(self.angularDiff)+" dist = "+str(dist)+"\n pos = "+str(self.robotPosition)+"\n------------------\n"
 
         #print "-------------------------------------------------"
         #print "robotPosition = " + str(self.robotPosition)
@@ -94,7 +94,7 @@ class Robot:
                 return
         elif not self.bifurcacao:
             self.countdown -=1
-        
+
         if self.countdown>0:
             return
         self.sobreBifurcacao = False
@@ -132,9 +132,9 @@ class Robot:
                 self.visionSensorReading[i]=(data[0][11]<0.1) # data[11] is the average of intensity of the image
                 # TRUE: sensor esta sobre a linha preta
                 #print 'avg camera '+str(i)+' = ' + str(self.visionSensorReading[i])
-    
-    def checkBifurcacao(self):    
-        self.countFaixas = 0            
+
+    def checkBifurcacao(self):
+        self.countFaixas = 0
         print self.visionSensorReading
         if not self.bifurcacao:
             for i in range(3):
@@ -144,7 +144,7 @@ class Robot:
                     self.countFaixas = 0
                     return True
         return False
-    
+
     def avoidObstacle(self):
         for i in range(2,8):
             if self.sonarReading[i] > -1 and self.sonarReading[i] < 0.4:
