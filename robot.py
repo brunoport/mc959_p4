@@ -30,7 +30,7 @@ class Robot:
     sobreBifurcacao = False
 
     andaRetoCount = 0;
-    
+
     def __init__(self, clientID, name):
         self.clientID = clientID
         self.name = name
@@ -100,7 +100,7 @@ class Robot:
                 return
         elif not self.bifurcacao:
             self.countdown -=1
-        
+
         if self.countdown>0:
             return
         self.sobreBifurcacao = False
@@ -110,7 +110,7 @@ class Robot:
 
 
 
-    
+
     def followLine(self):
         if self.visionSensorReading[2]:#direita
             return 2,1
@@ -147,9 +147,9 @@ class Robot:
                 self.visionSensorReading[i]=(data[0][11]<0.1) # data[11] is the average of intensity of the image
                 # TRUE: sensor esta sobre a linha preta
                 #print 'avg camera '+str(i)+' = ' + str(self.visionSensorReading[i])
-    
-    def checkBifurcacao(self):    
-        self.countFaixas = 0            
+
+    def checkBifurcacao(self):
+        self.countFaixas = 0
         print self.visionSensorReading
         if not self.bifurcacao:
             for i in range(3):
@@ -159,7 +159,7 @@ class Robot:
                     self.countFaixas = 0
                     return True
         return False
-    
+
     def avoidObstacle(self):
         for i in range(2,8):
             if self.sonarReading[i] > -1 and self.sonarReading[i] < 0.4:
@@ -179,3 +179,28 @@ class Robot:
         im = im.transpose(I.FLIP_LEFT_RIGHT)
         im.save('images/' + visionSensorName + '.png', 'png')
         print 'done!'
+
+    def updateEncoders(self):
+        _,self.encoder[0] = vrep.simxGetJointPosition(self.clientID, self.motorHandle[0], vrep.simx_opmode_oneshot);
+        _,self.encoder[1] = vrep.simxGetJointPosition(self.clientID, self.motorHandle[1], vrep.simx_opmode_oneshot);
+        if self.angularDiff[0] >= 0:
+            self.angularDiff[0] = self.encoder[0]-self.lastEncoder[0] if self.encoder[0]>=self.lastEncoder[0] else 2*PI-self.lastEncoder[0]+self.encoder[0]
+        else:
+            self.angularDiff[0] = self.encoder[0]-self.lastEncoder[0] if self.encoder[0]<=self.lastEncoder[0] else self.encoder[0]-self.lastEncoder[0]-2*PI
+
+        if self.angularDiff[1] >= 0:
+            self.angularDiff[1] = self.encoder[1]-self.lastEncoder[1] if self.encoder[1]>=self.lastEncoder[1] else 2*PI-self.lastEncoder[1]+self.encoder[1]
+        else:
+            self.angularDiff[1] = self.encoder[1]-self.lastEncoder[1] if self.encoder[1]<=self.lastEncoder[1] else self.encoder[1]-self.lastEncoder[0]-2*PI
+
+
+        # self.angularDiff[0] = self.encoder[0]-self.lastEncoder[0]
+        # self.angularDiff[1] = self.encoder[1]-self.lastEncoder[1]
+        self.lastEncoder[0] = self.encoder[0]
+        self.lastEncoder[1] = self.encoder[1]
+
+    def distanceForward(self):
+        leftDS = self.angularDiff[0]*R
+        rightDS = self.angularDiff[1]*R
+        dS = (leftDS+rightDS)/2;
+        return dS
