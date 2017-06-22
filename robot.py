@@ -22,6 +22,7 @@ class Robot:
     visionSensorHandles=[0,0,0]
     blackVisionReading=[False,False,False]
     redVisionReading=[False,False,False]
+    comandos=[1,2,0]
     corredor=2
     faixaASeguir=0
     countFaixas=0
@@ -29,8 +30,10 @@ class Robot:
     entrar = False
     countdown = 0
     sobreBifurcacao = False
-
-    andaRetoCount = 0;
+    i=0
+    andaRetoCount = 0
+    entrarDireita = False
+    entrarEsquerda = False
 
     def __init__(self, clientID, name):
         self.clientID = clientID
@@ -73,7 +76,7 @@ class Robot:
 
         self.updateEncoders()
         dist = self.distanceForward()
-        print "\n-----------------\nangularDiff = " + str(self.angularDiff)+" dist = "+str(dist)+"\n pos = "+str(self.robotPosition)+"\n------------------\n"
+        #print "\n-----------------\nangularDiff = " + str(self.angularDiff)+" dist = "+str(dist)+"\n pos = "+str(self.robotPosition)+"\n------------------\n"
 
         #print "-------------------------------------------------"
         #print "robotPosition = " + str(self.robotPosition)
@@ -88,42 +91,55 @@ class Robot:
             self.sobreBifurcacao = True
             print "BIFURCACAO " + str(self.bifurcacao)
             print "ENTRAR DAQUI " + str(self.faixaASeguir)
-            if self.faixaASeguir == 0:
-                print "ENTRAR AQUI ============>"
-                self.entrar = True
+            print "COMANDO " + str(self.i) + " " + str(self.comandos[self.i])
+            if self.comandos[self.i] == 2:
+                print "ENTRAR DIREITA"
+                self.entrarDireita = True
+                self.entrarEsquerda = False
                 self.andaRetoCount = 0
-                self.faixaASeguir=1#errado
-            else:
-                print "NAO EH ESSA AINDA"
-                self.entrar = False
-                self.move(2, 2)
-                self.countdown = 10
-                return
+                self.countdown = 30
+                self.andaRetoCount = 0
+            if self.comandos[self.i] == 0:
+                print "ENTRAR ESQUERDA"
+                self.entrarEsquerda = True
+                self.entrarDireita = False
+                self.andaRetoCount = 0
+                self.countdown = 30
+                self.andaRetoCount = 0
+            elif self.comandos[self.i] ==1:
+                print "RETO"
+                self.entrarEsquerda = True
+                self.entrarDireita = True
+                self.countdown = 30
+            self.i+=1
         elif not self.bifurcacao:
+            print self.countdown
             self.countdown -=1
-
-        if self.countdown>0:
-            return
-        self.sobreBifurcacao = False
-        entrar = False
+        if self.countdown==0 and self.entrarDireita and self.entrarEsquerda:
+            self.sobreBifurcacao = False
+            self.entrarEsquerda = False
+            self.entrarDireita = False
         vLeft, vRight = self.followLine()
         self.move(vLeft, vRight)
 
-
-
-
     def followLine(self):
         if True in self.redVisionReading:
-            return  0,0
-        if self.blackVisionReading[2]:#direita
+            print "foto"
+        if self.entrarEsquerda and self.entrarDireita:
+            return 2,2
+        if self.blackVisionReading[2] and not self.entrarEsquerda:#direita
+            self.andaRetoCount = 0
             return 2,1
-        if not self.entrar and self.blackVisionReading[0]:#esquerda
+        if self.blackVisionReading[0] and not self.entrarDireita:#esquerda
+            self.andaRetoCount = 0
             return 1,2
-
+            
         self.andaRetoCount += 1
 
-        if self.andaRetoCount ==10 and self.entrar:
-            self.faixaASeguir = 1
+        if self.andaRetoCount ==10 and (self.entrarEsquerda or self.entrarDireita):
+            self.sobreBifurcacao = False
+            self.entrarEsquerda = False
+            self.entrarDireita = False
             print "RESET FAIXA"
 
         return 2,2
@@ -151,11 +167,11 @@ class Robot:
                                                                 # TRUE: sensor esta sobre a linha preta
                 #print 'avg camera '+str(i)+' = ' + str(self.blackVisionReading[i])
                 self.redVisionReading[i] = (data[0][6] > 0.85)   # True: sensor captou vermelho
-        print 'max red '+str(i)+' = ' + str(self.redVisionReading)
+        #print 'max red '+str(i)+' = ' + str(self.redVisionReading)
 
     def checkBifurcacao(self):
         self.countFaixas = 0
-        print self.blackVisionReading
+        #print self.blackVisionReading
         if not self.bifurcacao:
             for i in range(3):
                 if self.blackVisionReading[i]:
