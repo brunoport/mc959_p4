@@ -20,7 +20,8 @@ class Robot:
     robotPosition = []
     robotOrientation = []
     visionSensorHandles=[0,0,0]
-    visionSensorReading=[False,False,False]
+    blackVisionReading=[False,False,False]
+    redVisionReading=[False,False,False]
     corredor=2
     faixaASeguir=0
     countFaixas=0
@@ -112,9 +113,11 @@ class Robot:
 
 
     def followLine(self):
-        if self.visionSensorReading[2]:#direita
+        if True in self.redVisionReading:
+            return  0,0
+        if self.blackVisionReading[2]:#direita
             return 2,1
-        if not self.entrar and self.visionSensorReading[0]:#esquerda
+        if not self.entrar and self.blackVisionReading[0]:#esquerda
             return 1,2
 
         self.andaRetoCount += 1
@@ -144,16 +147,18 @@ class Robot:
         for i in range (3):
             err,detectedState,data=vrep.simxReadVisionSensor(self.clientID,self.visionSensorHandles[i], vrep.simx_opmode_streaming)
             if len(data) > 0:
-                self.visionSensorReading[i]=(data[0][11]<0.1) # data[11] is the average of intensity of the image
-                # TRUE: sensor esta sobre a linha preta
-                #print 'avg camera '+str(i)+' = ' + str(self.visionSensorReading[i])
+                self.blackVisionReading[i]=(data[0][10]<0.1)    # !!!data[10]!!! is the average of intensity of the image
+                                                                # TRUE: sensor esta sobre a linha preta
+                #print 'avg camera '+str(i)+' = ' + str(self.blackVisionReading[i])
+                self.redVisionReading[i] = (data[0][6] > 0.85)   # True: sensor captou vermelho
+        print 'max red '+str(i)+' = ' + str(self.redVisionReading)
 
     def checkBifurcacao(self):
         self.countFaixas = 0
-        print self.visionSensorReading
+        print self.blackVisionReading
         if not self.bifurcacao:
             for i in range(3):
-                if self.visionSensorReading[i]:
+                if self.blackVisionReading[i]:
                     self.countFaixas+=1
                 if self.countFaixas==2:
                     self.countFaixas = 0
@@ -200,7 +205,10 @@ class Robot:
         self.lastEncoder[1] = self.encoder[1]
 
     def distanceForward(self):
-        leftDS = self.angularDiff[0]*R
-        rightDS = self.angularDiff[1]*R
-        dS = (leftDS+rightDS)/2;
-        return dS
+        if abs(self.angularDiff[0] - self.angularDiff[1]) < 0.01:
+            leftDS = self.angularDiff[0]*R
+            rightDS = self.angularDiff[1]*R
+            dS = (leftDS+rightDS)/2;
+            return dS
+        else:
+            return -1           # robo provavelmente nao esta em linha reta
