@@ -29,6 +29,8 @@ class Robot:
     entrar = False
     countdown = 0
     sobreBifurcacao = False
+    distanceAfterRedMarker = 0
+    stoppingAtRedMarker = False
 
     andaRetoCount = 0;
 
@@ -113,8 +115,17 @@ class Robot:
 
 
     def followLine(self):
+        if self.stoppingAtRedMarker:
+            self.distanceAfterRedMarker = self.distanceAfterRedMarker + self.distanceForward()
+            #print "ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker)
+            if self.distanceAfterRedMarker > 0.4:
+                self.takePicture("Camera_Gondola")
+                self.distanceAfterRedMarker = 0
+
         if True in self.redVisionReading:
-            return  0,0
+            self.stoppingAtRedMarker = True
+            self.distanceAfterRedMarker = 0
+
         if self.blackVisionReading[2]:#direita
             return 2,1
         if not self.entrar and self.blackVisionReading[0]:#esquerda
