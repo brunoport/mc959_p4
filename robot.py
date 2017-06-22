@@ -79,7 +79,10 @@ class Robot:
         #print "robotPosition = " + str(self.robotPosition)
         #print "robotOrientation = " + str(self.robotOrientation)
 
-        #self.readSonars()
+        self.readSonars()
+        fator = self.getVelocityFactor()
+        print "FACTOR"
+        print fator
         self.readVision()
         #vLeft, vRight = self.avoidObstacle()
         self.bifurcacao = self.checkBifurcacao()
@@ -96,7 +99,7 @@ class Robot:
             else:
                 print "NAO EH ESSA AINDA"
                 self.entrar = False
-                self.move(2, 2)
+                self.move(fator*2, fator*2)
                 self.countdown = 10
                 return
         elif not self.bifurcacao:
@@ -107,7 +110,7 @@ class Robot:
         self.sobreBifurcacao = False
         entrar = False
         vLeft, vRight = self.followLine()
-        self.move(vLeft, vRight)
+        self.move(fator*vLeft, fator*vRight)
 
 
 
@@ -152,6 +155,48 @@ class Robot:
                 #print 'avg camera '+str(i)+' = ' + str(self.blackVisionReading[i])
                 self.redVisionReading[i] = (data[0][6] > 0.85)   # True: sensor captou vermelho
         print 'max red '+str(i)+' = ' + str(self.redVisionReading)
+
+    def getVelocityFactor(self):
+        sonars = []
+        NEAR_MAX = 0.3
+        MEDIUM_MAX = 0.8
+        NEAR = 0
+        MEDIUM = 1
+        FAR = 2
+        STOP = 0
+        SLOW = 0.4
+        FREE = 1
+        for i in range(2,6):
+            if(self.sonarReading[i] == -1):
+                sonars.append(2)
+            else:
+                sonars.append(self.sonarReading[i])
+        print self.sonarReading
+        print sonars
+        frontObstacle = min(sonars[1],sonars[2])
+        sideObstacle = min(sonars[0],sonars[3])
+        if(frontObstacle >= MEDIUM_MAX):
+            frontVal = FAR
+        elif(frontObstacle >= NEAR_MAX):
+            frontVal = MEDIUM
+        else:
+            frontVal = NEAR
+        if(sideObstacle >= MEDIUM_MAX):
+            sideVal = FAR
+        elif(sideObstacle >= NEAR_MAX):
+            sideVal = MEDIUM
+        else:
+            sideVal = NEAR
+        
+        # RULES 
+        if(frontVal == FAR and (sideVal == FAR or sideVal == MEDIUM)):
+            return FREE
+        elif(frontVal == FAR):
+            return STOP
+        elif(frontVal == MEDIUM):
+            return SLOW
+        else:
+            return STOP
 
     def checkBifurcacao(self):
         self.countFaixas = 0
