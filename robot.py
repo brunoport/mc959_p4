@@ -129,8 +129,6 @@ class Robot:
             if self.comandos[self.i] == Comando.ESQ:
                 print "ESQUERDA"
                 self.andaRetoCount = 0
-                self.countdown = 69
-                self.andaRetoCount = 0
             elif self.comandos[self.i] == Comando.RETO:
                 if True in self.redVisionReading:
                     print "RETO RED"
@@ -141,8 +139,6 @@ class Robot:
                     self.countdown =  69
             elif self.comandos[self.i] == Comando.DIR:
                 print "DIREITA"
-                self.andaRetoCount = 0
-                self.countdown = 69
                 self.andaRetoCount = 0
             elif self.comandos[self.i] == Comando.ROT:
                 print "ROTATION"
@@ -156,7 +152,7 @@ class Robot:
 
         elif not self.bifurcacao:
             self.countdown -=1
-        if self.countdown==0:
+        if self.countdown==0 and self.comandos[self.i] == Comando.RETO:
             print "ACABOU A BIFURCACAO"
             self.sobreBifurcacao = False
             self.comandos[self.i] = Comando.NONE
@@ -200,11 +196,10 @@ class Robot:
 
         self.andaRetoCount += 1
 
-        if self.andaRetoCount ==10 and (self.entrarEsquerda or self.entrarDireita):
+        if self.andaRetoCount ==10 and (self.comandos[self.i] == Comando.ESQ or self.comandos[self.i] == Comando.DIR):
+            print "ACABOU A BIFURCACAO"
             self.sobreBifurcacao = False
-            self.entrarEsquerda = False
-            self.entrarDireita = False
-            print "RESET FAIXA"
+            self.comandos[self.i] = Comando.NONE
 
         return 2,2
 
