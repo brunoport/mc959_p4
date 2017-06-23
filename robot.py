@@ -16,15 +16,16 @@ class Robot:
     motorHandle = [0,0]         # left and right motor handlers
     encoder = [0,0]
     lastEncoder = [0,0]
-    angularDiff = [0,0]         # "vel angular" das rodas
+    angularDiff = [0,0]
     gyro = 0
     sonarHandle = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]      # 16 sonar handlers
     sonarReading = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
     robotPosition = []
     robotOrientation = []
-    visionSensorHandles=[0,0,0]
+    visionSensorHandles=[0,0,0,0]
     blackVisionReading=[False,False,False]
     redVisionReading=[False,False,False]
+    comandos=[1,2,0]
     corredor=2
     faixaASeguir=0
     countFaixas=0
@@ -32,6 +33,10 @@ class Robot:
     entrar = False
     countdown = 0
     sobreBifurcacao = False
+    i=0
+    andaRetoCount = 0
+    entrarDireita = False
+    entrarEsquerda = False
     distanceAfterRedMarker = 0
     stoppingAtRedMarker = False
     vrepLastTime = 0
@@ -67,6 +72,7 @@ class Robot:
         _,self.visionSensorHandles[0]=vrep.simxGetObjectHandle(clientID, "Camera_Faixa_Esq", vrep.simx_opmode_oneshot_wait)
         _,self.visionSensorHandles[1]=vrep.simxGetObjectHandle(clientID, "Camera_Faixa_Meio", vrep.simx_opmode_oneshot_wait)
         _,self.visionSensorHandles[2]=vrep.simxGetObjectHandle(clientID, "Camera_Faixa_Dir", vrep.simx_opmode_oneshot_wait)
+        _,self.visionSensorHandles[3]=vrep.simxGetObjectHandle(clientID, "Camera_Gondola", vrep.simx_opmode_oneshot_wait)
 
         for i in range(16):
             sensorName = "Pioneer_p3dx_ultrasonicSensor" + str(i+1)
@@ -107,30 +113,41 @@ class Robot:
         # print fator
         self.readVision()
         #vLeft, vRight = self.avoidObstacle()
-        # self.bifurcacao = self.checkBifurcacao()
-        # if self.bifurcacao and not self.sobreBifurcacao:
-        #     self.faixaASeguir-=1
-        #     self.sobreBifurcacao = True
-        #     print "BIFURCACAO " + str(self.bifurcacao)
-        #     print "ENTRAR DAQUI " + str(self.faixaASeguir)
-        #     if self.faixaASeguir == 0:
-        #         print "ENTRAR AQUI ============>"
-        #         self.entrar = True
-        #         self.andaRetoCount = 0
-        #         self.faixaASeguir=1#errado
-        #     else:
-        #         print "NAO EH ESSA AINDA"
-        #         self.entrar = False
-        #         self.move(fator*2, fator*2)
-        #         self.countdown = 10
-        #         return
-        # elif not self.bifurcacao:
-        #     self.countdown -=1
-        #
-        # if self.countdown>0:
-        #     return
-        # self.sobreBifurcacao = False
-        entrar = False
+        self.bifurcacao = self.checkBifurcacao()
+        if self.bifurcacao and not self.sobreBifurcacao:
+            self.faixaASeguir-=1
+            self.sobreBifurcacao = True
+            print "BIFURCACAO " + str(self.bifurcacao)
+            print "ENTRAR DAQUI " + str(self.faixaASeguir)
+            print "COMANDO " + str(self.i) + " " + str(self.comandos[self.i])
+            if self.comandos[self.i] == 2:
+                print "ENTRAR DIREITA"
+                self.entrarDireita = True
+                self.entrarEsquerda = False
+                self.andaRetoCount = 0
+                self.countdown = 30
+                self.andaRetoCount = 0
+            if self.comandos[self.i] == 0:
+                print "ENTRAR ESQUERDA"
+                self.entrarEsquerda = True
+                self.entrarDireita = False
+                self.andaRetoCount = 0
+                self.countdown = 30
+                self.andaRetoCount = 0
+            elif self.comandos[self.i] ==1:
+                print "RETO"
+                self.entrarEsquerda = True
+                self.entrarDireita = True
+                self.countdown = 30
+            self.i+=1
+        elif not self.bifurcacao:
+            self.countdown -=1
+        if self.countdown==0 and self.entrarDireita and self.entrarEsquerda:
+            self.sobreBifurcacao = False
+            self.entrarEsquerda = False
+            self.entrarDireita = False
+        vLeft, vRight = self.followLine()
+        self.move(fator*vLeft, fator*vRight)
 
         if self.rotating:
             print "___ rotating "+str(self.rotating)
@@ -141,6 +158,7 @@ class Robot:
             self.move(fator*vLeft, fator*vRight)
 
 
+ 
 
 
 
@@ -156,23 +174,30 @@ class Robot:
 
             self.distanceAfterRedMarker = self.distanceAfterRedMarker + self.distanceForward()
             print "ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker)
-            if self.distanceAfterRedMarker > 0.4:
+            if self.distanceAfterRedMarker > 0.5:
                 return 0,0
-
+        
         if True in self.redVisionReading:
             print "viu vermelho"
-            self.stoppingAtRedMarker = True
             self.distanceAfterRedMarker = 0
+            self.stoppingAtRedMarker = True
 
-        if self.blackVisionReading[2]:#direita
+
+        if self.entrarEsquerda and self.entrarDireita:
+            return 2,2
+        if self.blackVisionReading[2] and not self.entrarEsquerda:#direita
+            self.andaRetoCount = 0
             return 2,1
-        if not self.entrar and self.blackVisionReading[0]:#esquerda
+        if self.blackVisionReading[0] and not self.entrarDireita:#esquerda
+            self.andaRetoCount = 0
             return 1,2
 
         self.andaRetoCount += 1
 
-        if self.andaRetoCount ==10 and self.entrar:
-            self.faixaASeguir = 1
+        if self.andaRetoCount ==10 and (self.entrarEsquerda or self.entrarDireita):
+            self.sobreBifurcacao = False
+            self.entrarEsquerda = False
+            self.entrarDireita = False
             print "RESET FAIXA"
 
         return 2,2
@@ -357,6 +382,7 @@ class Robot:
         if self.angularDiff[1] > 1:
             self.angularDiff[1] = 0
 
+        
         self.lastEncoder[0] = self.encoder[0]
         self.lastEncoder[1] = self.encoder[1]
 
@@ -368,3 +394,8 @@ class Robot:
             return dS
         else:
             return -1           # robo provavelmente nao esta em linha reta
+
+    def rotateCamera(self):
+        vrep.simxSetObjectOrientation(self.clientID, self.visionSensorHandles[3],self.visionSensorHandles[3], [0,math.pi,0], vrep.simx_opmode_oneshot_wait)
+        time.sleep(0.3)
+
