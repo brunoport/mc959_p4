@@ -34,6 +34,8 @@ class Robot:
     andaRetoCount = 0
     entrarDireita = False
     entrarEsquerda = False
+    distanceAfterRedMarker = 0
+    stoppingAtRedMarker = False
 
     def __init__(self, clientID, name):
         self.clientID = clientID
@@ -76,13 +78,16 @@ class Robot:
 
         self.updateEncoders()
         dist = self.distanceForward()
-        #print "\n-----------------\nangularDiff = " + str(self.angularDiff)+" dist = "+str(dist)+"\n pos = "+str(self.robotPosition)+"\n------------------\n"
+        print "\n-----------------\nangularDiff = " + str(self.angularDiff)+" dist = "+str(dist)+"\n pos = "+str(self.robotPosition)+"\n------------------\n"
 
         #print "-------------------------------------------------"
         #print "robotPosition = " + str(self.robotPosition)
         #print "robotOrientation = " + str(self.robotOrientation)
 
-        #self.readSonars()
+        self.readSonars()
+        fator = self.getVelocityFactor()
+        print "FACTOR"
+        print fator
         self.readVision()
         #vLeft, vRight = self.avoidObstacle()
         self.bifurcacao = self.checkBifurcacao()
@@ -113,18 +118,22 @@ class Robot:
                 self.countdown = 30
             self.i+=1
         elif not self.bifurcacao:
-            print self.countdown
             self.countdown -=1
         if self.countdown==0 and self.entrarDireita and self.entrarEsquerda:
             self.sobreBifurcacao = False
             self.entrarEsquerda = False
             self.entrarDireita = False
         vLeft, vRight = self.followLine()
-        self.move(vLeft, vRight)
+        self.move(fator*vLeft, fator*vRight)
+
+
+
 
     def followLine(self):
         if True in self.redVisionReading:
-            print "foto"
+            print "viu vermelho"
+            self.stoppingAtRedMarker = True
+            self.distanceAfterRedMarker = 0
         if self.entrarEsquerda and self.entrarDireita:
             return 2,2
         if self.blackVisionReading[2] and not self.entrarEsquerda:#direita
@@ -133,7 +142,7 @@ class Robot:
         if self.blackVisionReading[0] and not self.entrarDireita:#esquerda
             self.andaRetoCount = 0
             return 1,2
-            
+
         self.andaRetoCount += 1
 
         if self.andaRetoCount ==10 and (self.entrarEsquerda or self.entrarDireita):
@@ -167,11 +176,53 @@ class Robot:
                                                                 # TRUE: sensor esta sobre a linha preta
                 #print 'avg camera '+str(i)+' = ' + str(self.blackVisionReading[i])
                 self.redVisionReading[i] = (data[0][6] > 0.85)   # True: sensor captou vermelho
-        #print 'max red '+str(i)+' = ' + str(self.redVisionReading)
+        print 'max red '+str(i)+' = ' + str(self.redVisionReading)
+
+    def getVelocityFactor(self):
+        sonars = []
+        NEAR_MAX = 0.3
+        MEDIUM_MAX = 0.8
+        NEAR = 0
+        MEDIUM = 1
+        FAR = 2
+        STOP = 0
+        SLOW = 0.4
+        FREE = 1
+        for i in range(2,6):
+            if(self.sonarReading[i] == -1):
+                sonars.append(2)
+            else:
+                sonars.append(self.sonarReading[i])
+        print self.sonarReading
+        print sonars
+        frontObstacle = min(sonars[1],sonars[2])
+        sideObstacle = min(sonars[0],sonars[3])
+        if(frontObstacle >= MEDIUM_MAX):
+            frontVal = FAR
+        elif(frontObstacle >= NEAR_MAX):
+            frontVal = MEDIUM
+        else:
+            frontVal = NEAR
+        if(sideObstacle >= MEDIUM_MAX):
+            sideVal = FAR
+        elif(sideObstacle >= NEAR_MAX):
+            sideVal = MEDIUM
+        else:
+            sideVal = NEAR
+        
+        # RULES 
+        if(frontVal == FAR and (sideVal == FAR or sideVal == MEDIUM)):
+            return FREE
+        elif(frontVal == FAR):
+            return STOP
+        elif(frontVal == MEDIUM):
+            return SLOW
+        else:
+            return STOP
 
     def checkBifurcacao(self):
         self.countFaixas = 0
-        #print self.blackVisionReading
+        print self.blackVisionReading
         if not self.bifurcacao:
             for i in range(3):
                 if self.blackVisionReading[i]:
