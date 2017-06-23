@@ -1,4 +1,6 @@
+from __future__ import division
 from PIL import Image as I
+from math import sin, cos
 import vrep,array,time,sys
 import threading
 
@@ -14,11 +16,12 @@ class Robot:
     encoder = [0,0]
     lastEncoder = [0,0]
     angularDiff = [0,0]
+    gyro = 0
     sonarHandle = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]      # 16 sonar handlers
     sonarReading = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
     robotPosition = []
     robotOrientation = []
-    visionSensorHandles=[0,0,0]
+    visionSensorHandles=[0,0,0,0]
     blackVisionReading=[False,False,False]
     redVisionReading=[False,False,False]
     comandos=[1,2,0]
@@ -35,6 +38,17 @@ class Robot:
     entrarEsquerda = False
     distanceAfterRedMarker = 0
     stoppingAtRedMarker = False
+    vrepLastTime = 0
+    vrepDT = 0
+    # firstRun = True
+    targetOrientation = 0
+    rotating = False
+    test = 0
+    count = 0
+
+    pose = [0,0,PI/2]          # [x,y,teta]
+
+    andaRetoCount = 0;
 
     def __init__(self, clientID, name):
         self.clientID = clientID
@@ -57,6 +71,7 @@ class Robot:
         _,self.visionSensorHandles[0]=vrep.simxGetObjectHandle(clientID, "Camera_Faixa_Esq", vrep.simx_opmode_oneshot_wait)
         _,self.visionSensorHandles[1]=vrep.simxGetObjectHandle(clientID, "Camera_Faixa_Meio", vrep.simx_opmode_oneshot_wait)
         _,self.visionSensorHandles[2]=vrep.simxGetObjectHandle(clientID, "Camera_Faixa_Dir", vrep.simx_opmode_oneshot_wait)
+        _,self.visionSensorHandles[3]=vrep.simxGetObjectHandle(clientID, "Camera_Gondola", vrep.simx_opmode_oneshot_wait)
 
         for i in range(16):
             sensorName = "Pioneer_p3dx_ultrasonicSensor" + str(i+1)
@@ -71,22 +86,30 @@ class Robot:
         self.faixaASeguir = 2;
 
     def run(self):
+        # print "dt = "+str(self.vrepDT)
+
         # Get the robot current absolute position
         _,self.robotPosition = vrep.simxGetObjectPosition(self.clientID, self.handle,-1,vrep.simx_opmode_oneshot_wait);
         _,self.robotOrientation = vrep.simxGetObjectOrientation(self.clientID, self.handle,-1,vrep.simx_opmode_oneshot_wait);
 
+        # if self.firstRun:
+        #     pose = [self.robotPosition[0], self.robotPosition[1],self.robotOrientation[2]]
+        #     firstRun = False
+
         self.updateEncoders()
         dist = self.distanceForward()
-        print "\n-----------------\nangularDiff = " + str(self.angularDiff)+" dist = "+str(dist)+"\n pos = "+str(self.robotPosition)+"\n------------------\n"
+        self.updatePose()
+        # print "\n-----------------\nangularDiff = " + str(self.angularDiff)+" dist = "+str(dist)+"\n pos = "+str(self.robotPosition)+"\n------------------\n"
 
         #print "-------------------------------------------------"
         #print "robotPosition = " + str(self.robotPosition)
-        #print "robotOrientation = " + str(self.robotOrientation)
+        # print "robotOrientation = " + str(self.robotOrientation[2])
+        self.readGyro()
 
         self.readSonars()
         fator = self.getVelocityFactor()
-        print "FACTOR"
-        print fator
+        # print "FACTOR"
+        # print fator
         self.readVision()
         #vLeft, vRight = self.avoidObstacle()
         self.bifurcacao = self.checkBifurcacao()
@@ -125,14 +148,40 @@ class Robot:
         vLeft, vRight = self.followLine()
         self.move(fator*vLeft, fator*vRight)
 
+        if self.rotating:
+            print "___ rotating "+str(self.rotating)
+            vLeft, vRight = self.rotate180()
+            self.move(vLeft, vRight)
+        else:
+            vLeft, vRight = self.followLine()
+            self.move(fator*vLeft, fator*vRight)
+
+
+
 
 
 
     def followLine(self):
+        if self.test == 0 and not self.rotating:
+            return self.rotate180()
+        if self.stoppingAtRedMarker:
+            if self.distanceForward() < 0.005:
+                self.stoppingAtRedMarker = False
+                time.sleep(0.1) # espera o tranco
+                self.takePicture("Camera_Gondola")
+                return 1,1
+
+            self.distanceAfterRedMarker = self.distanceAfterRedMarker + self.distanceForward()
+            print "ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker)
+            if self.distanceAfterRedMarker > 0.5:
+                return 0,0
+
         if True in self.redVisionReading:
             print "viu vermelho"
-            self.stoppingAtRedMarker = True
             self.distanceAfterRedMarker = 0
+            self.stoppingAtRedMarker = True
+
+
         if self.entrarEsquerda and self.entrarDireita:
             return 2,2
         if self.blackVisionReading[2] and not self.entrarEsquerda:#direita
@@ -175,7 +224,69 @@ class Robot:
                                                                 # TRUE: sensor esta sobre a linha preta
                 #print 'avg camera '+str(i)+' = ' + str(self.blackVisionReading[i])
                 self.redVisionReading[i] = (data[0][6] > 0.85)   # True: sensor captou vermelho
-        print 'max red '+str(i)+' = ' + str(self.redVisionReading)
+        # print 'max red = ' + str(self.redVisionReading)
+
+    def rotate180(self):
+        if not self.rotating:
+            self.test = 1
+            self.rotating = True
+            if abs(self.pose[2] - PI/2) < 0.2:
+                self.targetOrientation = -PI/2
+            else:
+                self.targetOrientation = PI/2
+
+        if abs(self.pose[2] - self.targetOrientation) > 0.1:
+            print "### precisa chega no 0 --> "+str(abs(self.pose[2] - self.targetOrientation))
+            return 1,-1
+        else:
+            print "chegou!!!"
+            self.rotating = False
+            return 0,0
+
+
+    def updatePose(self):
+        if (self.count < 20):
+            self.pose = [self.robotPosition[0],self.robotPosition[1],self.robotOrientation[2]]
+            self.count += 1
+        else:
+            vLeft = self.angularDiff[0]*R
+            vRight = self.angularDiff[1]*R
+            dS = (vLeft+vRight)/2
+            # print " >>>> dS = "+str(dS)+" [vLeft, vRight] = "+str((vLeft,vRight))
+
+            dTeta = self.gyro*self.vrepDT
+
+            dX = dS*cos(self.pose[2]+dTeta/2);
+            dY = dS*sin(self.pose[2]+dTeta/2);
+
+            self.pose[0] += dX;
+            self.pose[1] += dY;
+
+            self.pose[2] += dTeta;
+            if self.pose[2] > PI:
+                self.pose[2] = -PI+(self.pose[2]-PI);
+            elif self.pose[2] < -PI:
+                self.pose[2] = PI-(self.pose[2]+PI);
+        print "------------------------------------------------"
+        print "> gt = "+str((self.robotPosition[0],self.robotPosition[1]))+" "+str(self.robotOrientation[2])
+        print "> odo= "+str(self.pose)
+        print "------------------------------------------------"
+
+
+
+    def readGyro(self):
+        _,self.gyro = vrep.simxGetFloatSignal(self.clientID, 'gyroZ', vrep.simx_opmode_streaming)
+        t = vrep.simxGetLastCmdTime(self.clientID)/1000
+        self.vrepDT = (t - self.vrepLastTime)
+        self.vrepLastTime = t
+        # dTeta = (self.angularDiff[1]*R-self.angularDiff[0]*R)/L;
+        # self.pose[2] += self.gyro*self.vrepDT # dTeta # self.gyro*self.vrepDT
+        # if (self.pose[2] > PI):
+        #     self.pose[2] = -PI+(self.pose[2]-PI)
+        # if (self.pose[2] < -PI):
+        #     self.pose[2] = PI-(self.pose[2]+PI)
+        # print "teta = "+str(self.pose[2])+"\ngyro = "+str(self.gyro)+" dT = "+str(self.vrepDT)
+        print "errOdoGt = "+str((self.pose[0]-self.robotPosition[0], self.pose[1]-self.robotPosition[1], self.pose[2]-self.robotOrientation[2]))
 
     def getVelocityFactor(self):
         sonars = []
@@ -192,8 +303,8 @@ class Robot:
                 sonars.append(2)
             else:
                 sonars.append(self.sonarReading[i])
-        print self.sonarReading
-        print sonars
+        # print self.sonarReading
+        # print sonars
         frontObstacle = min(sonars[1],sonars[2])
         sideObstacle = min(sonars[0],sonars[3])
         if(frontObstacle >= MEDIUM_MAX):
@@ -208,8 +319,8 @@ class Robot:
             sideVal = MEDIUM
         else:
             sideVal = NEAR
-        
-        # RULES 
+
+        # RULES
         if(frontVal == FAR and (sideVal == FAR or sideVal == MEDIUM)):
             return FREE
         elif(frontVal == FAR):
@@ -255,18 +366,22 @@ class Robot:
         _,self.encoder[0] = vrep.simxGetJointPosition(self.clientID, self.motorHandle[0], vrep.simx_opmode_oneshot);
         _,self.encoder[1] = vrep.simxGetJointPosition(self.clientID, self.motorHandle[1], vrep.simx_opmode_oneshot);
         if self.angularDiff[0] >= 0:
-            self.angularDiff[0] = self.encoder[0]-self.lastEncoder[0] if self.encoder[0]>=self.lastEncoder[0] else 2*PI-self.lastEncoder[0]+self.encoder[0]
+            self.angularDiff[0] = self.encoder[0]-self.lastEncoder[0] if self.encoder[0]*self.lastEncoder[0] >= 0 else 2*PI-self.lastEncoder[0]+self.encoder[0]
         else:
-            self.angularDiff[0] = self.encoder[0]-self.lastEncoder[0] if self.encoder[0]<=self.lastEncoder[0] else self.encoder[0]-self.lastEncoder[0]-2*PI
+            self.angularDiff[0] = self.encoder[0]-self.lastEncoder[0] if self.encoder[0]*self.lastEncoder[0] >= 0 else self.encoder[0]-self.lastEncoder[0]-2*PI
 
         if self.angularDiff[1] >= 0:
-            self.angularDiff[1] = self.encoder[1]-self.lastEncoder[1] if self.encoder[1]>=self.lastEncoder[1] else 2*PI-self.lastEncoder[1]+self.encoder[1]
+            # print "~~~~~ => enc1, lastEnc1 = "+str((self.encoder[1],self.lastEncoder[1]))
+            self.angularDiff[1] = self.encoder[1]-self.lastEncoder[1] if self.encoder[1]*self.lastEncoder[1] >= 0 else 2*PI-self.lastEncoder[1]+self.encoder[1]
         else:
-            self.angularDiff[1] = self.encoder[1]-self.lastEncoder[1] if self.encoder[1]<=self.lastEncoder[1] else self.encoder[1]-self.lastEncoder[0]-2*PI
+            self.angularDiff[1] = self.encoder[1]-self.lastEncoder[1] if self.encoder[1]*self.lastEncoder[1] >= 0 else self.encoder[1]-self.lastEncoder[1]-2*PI
+
+        if self.angularDiff[0] > 1:
+            self.angularDiff[0] = 0
+        if self.angularDiff[1] > 1:
+            self.angularDiff[1] = 0
 
 
-        # self.angularDiff[0] = self.encoder[0]-self.lastEncoder[0]
-        # self.angularDiff[1] = self.encoder[1]-self.lastEncoder[1]
         self.lastEncoder[0] = self.encoder[0]
         self.lastEncoder[1] = self.encoder[1]
 
@@ -278,15 +393,8 @@ class Robot:
             return dS
         else:
             return -1           # robo provavelmente nao esta em linha reta
-    def goToPosition(self,xObj,yObj):
-        xRobot = robotPosition[0] # ?
-        yRobot = robotPosition[1] # ?
-        orientation = robotOrientation[2] # ?
-        thresh = 0.5
-        # Estamos no corredor certo
-        if(abs(xRobot-xObj) < thresh):
-            # findY()
-        else:
-            if((yRobot-yObj) < 0 and )
 
 
+    def rotateCamera(self):
+        vrep.simxSetObjectOrientation(self.clientID, self.visionSensorHandles[3],self.visionSensorHandles[3], [0,math.pi,0], vrep.simx_opmode_oneshot_wait)
+        time.sleep(0.3)
