@@ -131,10 +131,18 @@ class Robot:
 
 
     def followLine(self):
-        if True in self.redVisionReading:
-            print "viu vermelho"
-            self.stoppingAtRedMarker = True
-            self.distanceAfterRedMarker = 0
+        if self.stoppingAtRedMarker:
+            if self.distanceForward() < 0.005:
+                self.stoppingAtRedMarker = False
+                time.sleep(0.1) # espera o tranco
+                self.takePicture("Camera_Gondola")
+                return 1,1
+
+            self.distanceAfterRedMarker = self.distanceAfterRedMarker + self.distanceForward()
+            print "ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker)
+            if self.distanceAfterRedMarker > 0.5:
+                return 0,0
+
         if self.entrarEsquerda and self.entrarDireita:
             return 2,2
         if self.blackVisionReading[2] and not self.entrarEsquerda:#direita
