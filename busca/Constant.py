@@ -46,7 +46,7 @@ class Constant:
 		"cD4" : 23
 	}
 	
-	typeNames = ['mark', 'transitionMark', 'transitionCorridor']
+	typeNames = ['mark', 'transitionCorridor']
 	types =  {'mark': 0, 'transitionMark' : 1, 'transitionCorridor' : 2}
 	xPositionRange =  {'mark': 4, 'transitionMark' : 4, 'transitionCorridor' : 3}
 	yPositionRange = {'mark': 3, 'transitionMark' : 2, 'transitionCorridor' : 2}

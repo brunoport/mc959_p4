@@ -12,7 +12,23 @@ class Vertex:
 		self.comingArcs = []
 		self.arcs = []
 		self.location = self.getLocation(mType,xPosition,yPosition,direction)
-
+	def mark(self):
+		cst = Constant()
+		self.color = cst.black
+	def isNotMark(self):
+		cst = Constant()
+		if(self.color == cst.white):
+			return True
+		else:
+			return False
+	def getArcFrom(self,father):
+		for arc in self.comingArcs:
+			if (arc.getSource() == father):
+				return arc
+	def getArcTo(self,son):
+		for arc in self.leavingArcs:
+			if (arc.getTarget() == son):
+				return arc
 	def addLeavingArc(self, leavingArc):
 		self.leavingArcs.append(leavingArc)
 		self.arcs.append(leavingArc)
@@ -21,6 +37,17 @@ class Vertex:
 		self.arcs.append(comingArc)
 	def toString(self):
 		return self.label+"("+str(self.location)+")"
+	def getUnvisitedNexts(self):
+		ret = []
+		for arc in self.leavingArcs:
+			target = arc.getTarget()
+			if(target.isNotMark()):
+				ret.append((self,target))
+		return ret
+	def getLeavingArcs(self):
+		return self.leavingArcs
+	def getComingArcs(self):
+		return self.comingArcs
 	def getLocation(self,mType,xPosition,yPosition,direction):
 		cst = Constant()
 		if(mType != cst.mark):

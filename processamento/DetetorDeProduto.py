@@ -15,7 +15,7 @@ class DetetorDeProduto:
 
 	def detectColor(self,color):
 		numberCubes = self.detect()
-		print numberCubes[color]
+		return numberCubes[color]
 	def detect(self):
 		# FIND IMAGE
 		image = cv2.imread("../images/Camera_Esquerda.png")
