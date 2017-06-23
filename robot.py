@@ -21,6 +21,7 @@ class Robot:
     visionSensorHandles=[0,0,0]
     blackVisionReading=[False,False,False]
     redVisionReading=[False,False,False]
+    comandos=[1,2,0]
     corredor=2
     faixaASeguir=0
     countFaixas=0
@@ -28,10 +29,12 @@ class Robot:
     entrar = False
     countdown = 0
     sobreBifurcacao = False
+    i=0
+    andaRetoCount = 0
+    entrarDireita = False
+    entrarEsquerda = False
     distanceAfterRedMarker = 0
     stoppingAtRedMarker = False
-
-    andaRetoCount = 0;
 
     def __init__(self, clientID, name):
         self.clientID = clientID
@@ -92,24 +95,33 @@ class Robot:
             self.sobreBifurcacao = True
             print "BIFURCACAO " + str(self.bifurcacao)
             print "ENTRAR DAQUI " + str(self.faixaASeguir)
-            if self.faixaASeguir == 0:
-                print "ENTRAR AQUI ============>"
-                self.entrar = True
+            print "COMANDO " + str(self.i) + " " + str(self.comandos[self.i])
+            if self.comandos[self.i] == 2:
+                print "ENTRAR DIREITA"
+                self.entrarDireita = True
+                self.entrarEsquerda = False
                 self.andaRetoCount = 0
-                self.faixaASeguir=1#errado
-            else:
-                print "NAO EH ESSA AINDA"
-                self.entrar = False
-                self.move(fator*2, fator*2)
-                self.countdown = 10
-                return
+                self.countdown = 30
+                self.andaRetoCount = 0
+            if self.comandos[self.i] == 0:
+                print "ENTRAR ESQUERDA"
+                self.entrarEsquerda = True
+                self.entrarDireita = False
+                self.andaRetoCount = 0
+                self.countdown = 30
+                self.andaRetoCount = 0
+            elif self.comandos[self.i] ==1:
+                print "RETO"
+                self.entrarEsquerda = True
+                self.entrarDireita = True
+                self.countdown = 30
+            self.i+=1
         elif not self.bifurcacao:
             self.countdown -=1
-
-        if self.countdown>0:
-            return
-        self.sobreBifurcacao = False
-        entrar = False
+        if self.countdown==0 and self.entrarDireita and self.entrarEsquerda:
+            self.sobreBifurcacao = False
+            self.entrarEsquerda = False
+            self.entrarDireita = False
         vLeft, vRight = self.followLine()
         self.move(fator*vLeft, fator*vRight)
 
@@ -117,32 +129,25 @@ class Robot:
 
 
     def followLine(self):
-        if self.stoppingAtRedMarker:
-            if self.distanceForward() < 0.005:
-                self.stoppingAtRedMarker = False
-                time.sleep(0.1) # espera o tranco
-                self.takePicture("Camera_Gondola")
-                return 1,1
-
-            self.distanceAfterRedMarker = self.distanceAfterRedMarker + self.distanceForward()
-            print "ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker)
-            if self.distanceAfterRedMarker > 0.4:
-                return 0,0
-
         if True in self.redVisionReading:
             print "viu vermelho"
             self.stoppingAtRedMarker = True
             self.distanceAfterRedMarker = 0
-
-        if self.blackVisionReading[2]:#direita
+        if self.entrarEsquerda and self.entrarDireita:
+            return 2,2
+        if self.blackVisionReading[2] and not self.entrarEsquerda:#direita
+            self.andaRetoCount = 0
             return 2,1
-        if not self.entrar and self.blackVisionReading[0]:#esquerda
+        if self.blackVisionReading[0] and not self.entrarDireita:#esquerda
+            self.andaRetoCount = 0
             return 1,2
 
         self.andaRetoCount += 1
 
-        if self.andaRetoCount ==10 and self.entrar:
-            self.faixaASeguir = 1
+        if self.andaRetoCount ==10 and (self.entrarEsquerda or self.entrarDireita):
+            self.sobreBifurcacao = False
+            self.entrarEsquerda = False
+            self.entrarDireita = False
             print "RESET FAIXA"
 
         return 2,2
