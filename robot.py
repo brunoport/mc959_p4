@@ -142,6 +142,12 @@ class Robot:
             print "ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker)
             if self.distanceAfterRedMarker > 0.5:
                 return 0,0
+        
+        if True in self.redVisionReading:
+            print "viu vermelho"
+            self.distanceAfterRedMarker = 0
+            self.stoppingAtRedMarker = True
+
 
         if self.entrarEsquerda and self.entrarDireita:
             return 2,2

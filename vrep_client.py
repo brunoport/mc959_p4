@@ -10,8 +10,6 @@ if clientID!=-1:
     rob = robot.Robot(clientID, "Pioneer_p3dx")
 
     rob.takePicture("Camera_Gondola")
-    #rob.rotateCamera()
-    #rob.rotateCamera()
 
     while True:
         rob.run()
