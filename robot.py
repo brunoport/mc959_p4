@@ -2,7 +2,7 @@ from __future__ import division
 from PIL import Image as I
 from math import sin, cos, pi
 from enum import Enum
-import vrep,array,time,sys
+import vrep,array,time,sys,random
 import threading
 
 R = 0.097;      # raio da roda em m
@@ -25,6 +25,7 @@ class Robot:
     lastEncoder = [0,0]
     angularDiff = [0,0]
     gyro = 0
+    queue = []
     sonarHandle = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]      # 16 sonar handlers
     sonarReading = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
     robotPosition = []
@@ -405,3 +406,59 @@ class Robot:
     def rotateCamera(self):
         vrep.simxSetObjectOrientation(self.clientID, self.visionSensorHandles[3], self.visionSensorHandles[3], [0, pi,0], vrep.simx_opmode_oneshot_wait)
         time.sleep(0.3)
+
+
+    # funcoes para sortear secao e produto
+    # exemplo:
+    #
+    # rob.queueAdd(rob.rollSection())   < insere uma nova secao na fila de locais
+    #                                   < que devem ser visitados
+    #
+    # section = rob.queueGetFirst()     < extrai a proxima secao da fila
+    #
+    # product = rob.rollProduct(section) < sorteia um produto a ser analisado.
+    #                                    < product eh uma tupla (COR, QUANTIDADE)
+    #                                    < que determina quantos produtos de cor
+    #                                    < COR devem estar presentes na secao
+    def rollProduct(self, section):
+        if section == False:
+            return False,False
+    
+        with open("mapa_produtos.txt") as f:
+            for line in f:
+                if line.startswith(section):
+                    data = line.split(' ')
+                    data[-1] = data[-1].replace('\n','');
+                    print data
+                    break
+        i = random.randint(0,(len(data)-1)/2-1)
+        color = data[1+(2*i)]
+        amount = data[1+(2*i)+1]
+        return color,amount 
+    
+    def rollSection(self):
+        corridor = random.randint(1,4)
+        if 2 <= corridor <= 3:
+            section = chr(random.randint(65,70)) # A a F
+        elif corridor == 4:
+            section = chr(random.randint(65,67)) # A a C
+        elif corridor == 1:
+            section = chr(random.randint(68,70)) # D a F
+        
+        return str(corridor) + section 
+    
+    def queuePrint(self):
+        for s in self.queue:
+            print s,
+        print ""
+    
+    def queueAdd(self, section):
+        self.queue.append(section)
+    
+    def queueGetFirst(self):
+        if len(self.queue) != 0:
+            s = self.queue.pop(0)
+            return s
+        else:
+            return False
+    
