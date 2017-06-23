@@ -1,12 +1,20 @@
 from __future__ import division
 from PIL import Image as I
-from math import sin, cos
+from math import sin, cos, pi
+from enum import Enum
 import vrep,array,time,sys
 import threading
 
 R = 0.097;      # raio da roda em m
 L = 0.381;      # distancia entre as 2 rodas em m
 PI = 3.14159265359
+class Comando(Enum):
+    ESQ = "left"
+    RETO = "ahead"
+    DIR = "right"
+    ROT = "180"
+    FOTO = "pic"
+    NONE = "none"
 
 class Robot:
     """Classe robo do V-REP"""
@@ -24,7 +32,7 @@ class Robot:
     visionSensorHandles=[0,0,0,0]
     blackVisionReading=[False,False,False]
     redVisionReading=[False,False,False]
-    comandos=[1,2,0]
+    comandos=[Comando.ESQ, Comando.RETO, Comando.RETO, Comando.FOTO, Comando.DIR, Comando.DIR, Comando.FOTO]
     corredor=2
     faixaASeguir=0
     countFaixas=0
@@ -32,7 +40,7 @@ class Robot:
     entrar = False
     countdown = 0
     sobreBifurcacao = False
-    i=0
+    i=-1
     andaRetoCount = 0
     entrarDireita = False
     entrarEsquerda = False
@@ -40,7 +48,6 @@ class Robot:
     stoppingAtRedMarker = False
     vrepLastTime = 0
     vrepDT = 0
-    # firstRun = True
     targetOrientation = 0
     rotating = False
     test = 0
@@ -114,37 +121,45 @@ class Robot:
         #vLeft, vRight = self.avoidObstacle()
         self.bifurcacao = self.checkBifurcacao()
         if self.bifurcacao and not self.sobreBifurcacao:
+            self.i+=1
             self.faixaASeguir-=1
             self.sobreBifurcacao = True
             print "BIFURCACAO " + str(self.bifurcacao)
-            print "ENTRAR DAQUI " + str(self.faixaASeguir)
             print "COMANDO " + str(self.i) + " " + str(self.comandos[self.i])
-            if self.comandos[self.i] == 2:
-                print "ENTRAR DIREITA"
-                self.entrarDireita = True
-                self.entrarEsquerda = False
+            if self.comandos[self.i] == Comando.ESQ:
+                print "ESQUERDA"
                 self.andaRetoCount = 0
-                self.countdown = 30
+                self.countdown = 69
                 self.andaRetoCount = 0
-            if self.comandos[self.i] == 0:
-                print "ENTRAR ESQUERDA"
-                self.entrarEsquerda = True
-                self.entrarDireita = False
+            elif self.comandos[self.i] == Comando.RETO:
+                if True in self.redVisionReading:
+                    print "RETO RED"
+                    self.countdown = 5
+                    self.comandos[self.i] = Comando.NONE
+                else:
+                    print "RETO NORMAL"
+                    self.countdown =  69
+            elif self.comandos[self.i] == Comando.DIR:
+                print "DIREITA"
                 self.andaRetoCount = 0
-                self.countdown = 30
+                self.countdown = 69
                 self.andaRetoCount = 0
-            elif self.comandos[self.i] ==1:
-                print "RETO"
-                self.entrarEsquerda = True
-                self.entrarDireita = True
-                self.countdown = 30
-            self.i+=1
+            elif self.comandos[self.i] == Comando.ROT:
+                print "ROTATION"
+            elif self.comandos[self.i] == Comando.FOTO:
+                print "TAKE PICTURE"
+                self.countdown = 5
+
+                self.distanceAfterRedMarker = 0
+                self.stoppingAtRedMarker = True
+
+
         elif not self.bifurcacao:
             self.countdown -=1
-        if self.countdown==0 and self.entrarDireita and self.entrarEsquerda:
+        if self.countdown==0:
+            print "ACABOU A BIFURCACAO"
             self.sobreBifurcacao = False
-            self.entrarEsquerda = False
-            self.entrarDireita = False
+            self.comandos[self.i] = Comando.NONE
         vLeft, vRight = self.followLine()
         self.move(fator*vLeft, fator*vRight)
 
@@ -157,37 +172,29 @@ class Robot:
             self.move(fator*vLeft, fator*vRight)
 
 
-
-
-
-
     def followLine(self):
-        if self.test == 0 and not self.rotating:
+        if self.comandos[self.i] == Comando.ROT and not self.rotating:
             return self.rotate180()
+
         if self.stoppingAtRedMarker:
             if self.distanceForward() < 0.005:
                 self.stoppingAtRedMarker = False
                 time.sleep(0.1) # espera o tranco
                 self.takePicture("Camera_Gondola")
+                self.comandos[self.i] = Comando.NONE
                 return 1,1
-
             self.distanceAfterRedMarker = self.distanceAfterRedMarker + self.distanceForward()
             print "ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker)
             if self.distanceAfterRedMarker > 0.5:
                 return 0,0
 
-        if True in self.redVisionReading:
-            print "viu vermelho"
-            self.distanceAfterRedMarker = 0
-            self.stoppingAtRedMarker = True
 
-
-        if self.entrarEsquerda and self.entrarDireita:
+        if self.comandos[self.i]==Comando.RETO:
             return 2,2
-        if self.blackVisionReading[2] and not self.entrarEsquerda:#direita
+        if self.blackVisionReading[2] and not self.comandos[self.i] == Comando.ESQ:#direita
             self.andaRetoCount = 0
             return 2,1
-        if self.blackVisionReading[0] and not self.entrarDireita:#esquerda
+        if self.blackVisionReading[0] and not self.comandos[self.i] == Comando.DIR:#esquerda
             self.andaRetoCount = 0
             return 1,2
 
@@ -267,10 +274,10 @@ class Robot:
                 self.pose[2] = -PI+(self.pose[2]-PI);
             elif self.pose[2] < -PI:
                 self.pose[2] = PI-(self.pose[2]+PI);
-        print "------------------------------------------------"
-        print "> gt = "+str((self.robotPosition[0],self.robotPosition[1]))+" "+str(self.robotOrientation[2])
-        print "> odo= "+str(self.pose)
-        print "------------------------------------------------"
+        # print "------------------------------------------------"
+        # print "> gt = "+str((self.robotPosition[0],self.robotPosition[1]))+" "+str(self.robotOrientation[2])
+        # print "> odo= "+str(self.pose)
+        # print "------------------------------------------------"
 
 
 
@@ -286,7 +293,7 @@ class Robot:
         # if (self.pose[2] < -PI):
         #     self.pose[2] = PI-(self.pose[2]+PI)
         # print "teta = "+str(self.pose[2])+"\ngyro = "+str(self.gyro)+" dT = "+str(self.vrepDT)
-        print "errOdoGt = "+str((self.pose[0]-self.robotPosition[0], self.pose[1]-self.robotPosition[1], self.pose[2]-self.robotOrientation[2]))
+        #print "errOdoGt = "+str((self.pose[0]-self.robotPosition[0], self.pose[1]-self.robotPosition[1], self.pose[2]-self.robotOrientation[2]))
 
     def getVelocityFactor(self):
         sonars = []
@@ -332,7 +339,7 @@ class Robot:
 
     def checkBifurcacao(self):
         self.countFaixas = 0
-        print self.blackVisionReading
+        #print self.blackVisionReading
         if not self.bifurcacao:
             for i in range(3):
                 if self.blackVisionReading[i]:
@@ -340,6 +347,11 @@ class Robot:
                 if self.countFaixas==2:
                     self.countFaixas = 0
                     return True
+
+            if True in self.redVisionReading:
+                print "CHECK BIFURCATION : RED"
+                return True
+
         return False
 
     def avoidObstacle(self):
@@ -396,5 +408,5 @@ class Robot:
 
 
     def rotateCamera(self):
-        vrep.simxSetObjectOrientation(self.clientID, self.visionSensorHandles[3],self.visionSensorHandles[3], [0,math.pi,0], vrep.simx_opmode_oneshot_wait)
+        vrep.simxSetObjectOrientation(self.clientID, self.visionSensorHandles[3], self.visionSensorHandles[3], [0, pi,0], vrep.simx_opmode_oneshot_wait)
         time.sleep(0.3)
