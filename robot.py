@@ -1,5 +1,5 @@
 from PIL import Image as I
-import vrep,array,time,sys
+import vrep,array,time,sys,math
 import threading
 
 R = 0.097;      # raio da roda em m
@@ -19,7 +19,7 @@ class Robot:
     sonarReading = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
     robotPosition = []
     robotOrientation = []
-    visionSensorHandles=[0,0,0]
+    visionSensorHandles=[0,0,0,0]
     blackVisionReading=[False,False,False]
     redVisionReading=[False,False,False]
     comandos=[1,2,0]
@@ -58,6 +58,7 @@ class Robot:
         _,self.visionSensorHandles[0]=vrep.simxGetObjectHandle(clientID, "Camera_Faixa_Esq", vrep.simx_opmode_oneshot_wait)
         _,self.visionSensorHandles[1]=vrep.simxGetObjectHandle(clientID, "Camera_Faixa_Meio", vrep.simx_opmode_oneshot_wait)
         _,self.visionSensorHandles[2]=vrep.simxGetObjectHandle(clientID, "Camera_Faixa_Dir", vrep.simx_opmode_oneshot_wait)
+        _,self.visionSensorHandles[3]=vrep.simxGetObjectHandle(clientID, "Camera_Gondola", vrep.simx_opmode_oneshot_wait)
 
         for i in range(16):
             sensorName = "Pioneer_p3dx_ultrasonicSensor" + str(i+1)
@@ -279,3 +280,8 @@ class Robot:
             return dS
         else:
             return -1           # robo provavelmente nao esta em linha reta
+
+    def rotateCamera(self):
+        vrep.simxSetObjectOrientation(self.clientID, self.visionSensorHandles[3],self.visionSensorHandles[3], [0,math.pi,0], vrep.simx_opmode_oneshot_wait)
+        time.sleep(0.3)
+
