@@ -158,7 +158,7 @@ class Robot:
             self.move(fator*vLeft, fator*vRight)
 
 
- 
+
 
 
 
@@ -176,7 +176,7 @@ class Robot:
             print "ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker)
             if self.distanceAfterRedMarker > 0.5:
                 return 0,0
-        
+
         if True in self.redVisionReading:
             print "viu vermelho"
             self.distanceAfterRedMarker = 0
@@ -287,7 +287,7 @@ class Robot:
         # if (self.pose[2] < -PI):
         #     self.pose[2] = PI-(self.pose[2]+PI)
         # print "teta = "+str(self.pose[2])+"\ngyro = "+str(self.gyro)+" dT = "+str(self.vrepDT)
-        print "diffTeta = "+str(self.pose[2]-self.robotOrientation[2])
+        print "errOdoGt = "+str((self.pose[0]-self.robotPosition[0], self.pose[1]-self.robotPosition[1], self.pose[2]-self.robotOrientation[2]))
 
     def getVelocityFactor(self):
         sonars = []
@@ -382,7 +382,7 @@ class Robot:
         if self.angularDiff[1] > 1:
             self.angularDiff[1] = 0
 
-        
+
         self.lastEncoder[0] = self.encoder[0]
         self.lastEncoder[1] = self.encoder[1]
 
@@ -398,4 +398,3 @@ class Robot:
     def rotateCamera(self):
         vrep.simxSetObjectOrientation(self.clientID, self.visionSensorHandles[3],self.visionSensorHandles[3], [0,math.pi,0], vrep.simx_opmode_oneshot_wait)
         time.sleep(0.3)
-
