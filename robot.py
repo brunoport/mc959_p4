@@ -8,7 +8,6 @@ PI = 3.14159265359
 
 class Robot:
     """Classe robo do V-REP"""
-
     handle = 0                  # robot handle
     encoderHandle = [0,0]       # left and right encoder handlers
     motorHandle = [0,0]         # left and right motor handlers
@@ -274,3 +273,15 @@ class Robot:
             return dS
         else:
             return -1           # robo provavelmente nao esta em linha reta
+    def goToPosition(self,xObj,yObj):
+        xRobot = robotPosition[0] # ?
+        yRobot = robotPosition[1] # ?
+        orientation = robotOrientation[2] # ?
+        thresh = 0.5
+        # Estamos no corredor certo
+        if(abs(xRobot-xObj) < thresh):
+            # findY()
+        else:
+            if((yRobot-yObj) < 0 and )
+
+
