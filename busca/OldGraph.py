@@ -20,6 +20,8 @@ class Graph:
 						self.verticesDict[vertex.getLabel()] = vertex
 						if(mType == cst.mark):
 							self.marks[vertex.getLabel()] = vertex
+						elif(mType == cst.transitionMark):
+							self.transitionMark[vertex.getLabel()] = vertex
 						else:
 							self.transitionCorridor[vertex.getLabel()] = vertex
 		self.createArcs()
@@ -40,51 +42,30 @@ class Graph:
 		father = fathers[current.getLabel()]
 		while father:
 			arc = current.getArcFrom(father)
-			solution.insert(0,arc.getAction())
+			solution.insert(0,arc)
 			current = father
 			father = fathers[current.getLabel()]
 		return solution
-	def actionsToObjective(self,firstPositionLabel, objectiveLabel):
-		source = self.verticesDict[firstPositionLabel]
-		target = self.verticesDict[objectiveLabel]
-		lastPos = target
+	def testBusca(self,sourceLabel, targetLabel):
+		source = self.verticesDict[sourceLabel]
+		target = self.verticesDict[targetLabel]
 		sett,fathers = self.bfs(source)
+		print "FROM ",
+		print source.toString()
 		solution = self.constructSolution(source,target,fathers)
-		print solution[len(solution)-1]
-		if(solution[len(solution)-1] == "180"):
-			solution[len(solution)-1] = "rotateCamera"
-			lastPos = fathers[target.getLabel()]
-		return lastPos,solution
-	# 	source = self.verticesDict[sourceLabel]
-	# 	target = self.verticesDict[targetLabel]
-	# 	sett,fathers = self.bfs(source)
-	# 	print "FROM ",
-	# 	print source.toString()
-	# 	solution = self.constructSolution(source,target,fathers)
-	# 	for arc in solution:
-	# 		print arc.getAction()
-	# 	print "TO ",
-	# 	print target.toString()
-	# def testBusca(self,sourceLabel, targetLabel):
-	# 	source = self.verticesDict[sourceLabel]
-	# 	target = self.verticesDict[targetLabel]
-	# 	sett,fathers = self.bfs(source)
-	# 	print "FROM ",
-	# 	print source.toString()
-	# 	solution = self.constructSolution(source,target,fathers)
-	# 	for arc in solution:
-	# 		print arc.getAction()
-	# 	print "TO ",
-	# 	print target.toString()
+		for arc in solution:
+			print arc.getAction()
+		print "TO ",
+		print target.toString()
 		# current = target
 		# father = fathers[current.getLabel()]
 		# while father:
 		# 	print current.getLabel()
 		# 	current = father
-	# 	# 	father = fathers[current.getLabel()]		
-	# def test(self):
-	# 	for arc in self.arcs:
-	# 		print arc.toString()
+		# 	father = fathers[current.getLabel()]		
+	def test(self):
+		for arc in self.arcs:
+			print arc.toString()
 	def bfs(self,start):
 	    visited, queue = set(), [(None,start)]
 	    fathers = {}
@@ -115,46 +96,52 @@ class Graph:
 		transitionCorridor34DownRight = self.verticesDict["transitionCorridor3-4DownRight"]#  transitionCorridor3-4DownRight
 		transitionCorridor34DownLeft = self.verticesDict["transitionCorridor3-4DownLeft"]#  transitionCorridor3-4DownLeft
 		arc = transitionCorridor12UpLeft.getArcTo(markADown1)
-		arc.setAction("ahead")
+		arc.setAction("nothing")
 		arc = transitionCorridor12UpRight.getArcFrom(markAUp1)
-		arc.setAction("ahead")
+		arc.setAction("nothing")
 		arc = transitionCorridor12DownLeft.getArcTo(markCUp1)
-		arc.setAction("ahead")
+		arc.setAction("nothing")
 		arc = transitionCorridor12DownRight.getArcFrom(markCDown1)
-		arc.setAction("ahead")
+		arc.setAction("nothing")
 		arc = transitionCorridor34UpRight.getArcTo(markADown4)
-		arc.setAction("ahead")
+		arc.setAction("nothing")
 		arc = transitionCorridor34UpLeft.getArcFrom(markAUp4)
-		arc.setAction("ahead")
+		arc.setAction("nothing")
 		arc = transitionCorridor34DownRight.getArcTo(markCUp4)
-		arc.setAction("ahead")
+		arc.setAction("nothing")
 		arc = transitionCorridor34DownLeft.getArcFrom(markCDown4)
-		arc.setAction("ahead")
+		arc.setAction("nothing")
 	def createArcs(self):
-		#self.createArcBetweenTransitionMark()
+		self.createArcBetweenTransitionMark()
 		self.createArcBetweenTransitionCorridor()
-		self.createArcBetweenMark()
+		self.createArcBetweenMarkAndTransitionMark()
 		self.createArcBetweenMarkAndTransitionCorridor()
-	def createArcBetweenMark(self):
+	def createArcBetweenMarkAndTransitionMark(self):
 		cst = Constant()
 		for number in [1,2,3,4]:
 			for direc in ["Up", "Down"]:
 				for i in range(len(cst.letters)-1):
 					labelTop = "mark"+cst.letters[i]+direc+str(number)
+					labelMid = "transitionMark"+cst.letters[i]+"-"+cst.letters[i+1]+direc+str(number)
 					labelBottom = "mark"+cst.letters[i+1]+direc+str(number)
 					if(direc == "Up"):
-						newArc = Arc(self.marks[labelBottom],self.marks[labelTop],"ahead")
+						newArc1 = Arc(self.marks[labelBottom],self.transitionMark[labelMid],"nothing")
+						newArc2 = Arc(self.transitionMark[labelMid],self.marks[labelTop],"nothing")
 					else:
-						newArc = Arc(self.marks[labelTop],self.marks[labelBottom],"ahead")
-					self.arcs.append(newArc)
-			for i in range(len(cst.letters)):
-				labelLeft = "mark"+cst.letters[i]+"Up"+str(number)
-				labelRight = "mark"+cst.letters[i]+"Down"+str(number)
-				newArc1 = Arc(self.marks[labelLeft],self.marks[labelRight],"180")
-				newArc2 = Arc(self.marks[labelRight],self.marks[labelLeft],"180")
+						newArc1 = Arc(self.marks[labelTop],self.transitionMark[labelMid],"nothing")
+						newArc2 = Arc(self.transitionMark[labelMid],self.marks[labelBottom],"nothing")
+					self.arcs.append(newArc1)
+					self.arcs.append(newArc2)
+	def createArcBetweenTransitionMark(self):
+		cst = Constant()
+		for number in [1,2,3,4]:
+			for i in range(len(cst.letters)-1):
+				labelUp = "transitionMark"+cst.letters[i]+"-"+cst.letters[i+1]+"Up"+str(number)
+				labelDown = "transitionMark"+cst.letters[i]+"-"+cst.letters[i+1]+"Down"+str(number)
+				newArc1 = Arc(self.transitionMark[labelUp],self.transitionMark[labelDown],"180")
+				newArc2 = Arc(self.transitionMark[labelDown],self.transitionMark[labelUp],"180")
 				self.arcs.append(newArc1)
 				self.arcs.append(newArc2)
-
 
 	def createArcBetweenTransitionCorridor(self):
 		for direc in ["Up","Down"]:
@@ -164,10 +151,22 @@ class Graph:
 			label2Left = "transitionCorridor2-3"+str(direc)+"Left"
 			label3Right = "transitionCorridor3-4"+str(direc)+"Right"
 			label3Left = "transitionCorridor3-4"+str(direc)+"Left"
-			newArc1 = Arc(self.transitionCorridor[label1Right],self.transitionCorridor[label2Right],"ahead")
-			newArc2 = Arc(self.transitionCorridor[label2Right],self.transitionCorridor[label3Right],"ahead")
-			newArc3 = Arc(self.transitionCorridor[label3Left],self.transitionCorridor[label2Left],"ahead")
-			newArc4 = Arc(self.transitionCorridor[label2Left],self.transitionCorridor[label1Left],"ahead")
+			newArc1 = Arc(self.transitionCorridor[label1Right],self.transitionCorridor[label1Left],"180")
+			newArc2 = Arc(self.transitionCorridor[label1Left],self.transitionCorridor[label1Right],"180")
+			newArc3 = Arc(self.transitionCorridor[label2Right],self.transitionCorridor[label2Left],"180")
+			newArc4 = Arc(self.transitionCorridor[label2Left],self.transitionCorridor[label2Right],"180")
+			newArc5 = Arc(self.transitionCorridor[label3Right],self.transitionCorridor[label2Left],"180")
+			newArc6 = Arc(self.transitionCorridor[label2Left],self.transitionCorridor[label3Right],"180")
+			self.arcs.append(newArc1)
+			self.arcs.append(newArc2)
+			self.arcs.append(newArc3)
+			self.arcs.append(newArc4)
+			self.arcs.append(newArc5)
+			self.arcs.append(newArc6)
+			newArc1 = Arc(self.transitionCorridor[label1Right],self.transitionCorridor[label2Right],"nothing")
+			newArc2 = Arc(self.transitionCorridor[label2Right],self.transitionCorridor[label3Right],"nothing")
+			newArc3 = Arc(self.transitionCorridor[label3Left],self.transitionCorridor[label2Left],"nothing")
+			newArc4 = Arc(self.transitionCorridor[label2Left],self.transitionCorridor[label1Left],"nothing")
 			self.arcs.append(newArc1)
 			self.arcs.append(newArc2)
 			self.arcs.append(newArc3)

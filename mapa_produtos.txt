@@ -1,14 +1,29 @@
-<corredor> <secao> <rgb> <qtd_cubos>
-corredor: 1 a 4
-secao: A a F
-rgb: numero binario de 3 digitos (e.g. 110 = amarelo)
-qtd_cubos: quantidade de cubos na secao
+# YELLOW = 0
+# GREEN =  1
+# CLEAR BLUE = 2
+# RED = 4
+# DARK BLUE = 6
+# PURPLE = 7
 
-IMPORTANTE: a somatoria de cubos numa secao deve ser igual a 50
+# Formato do arquivo:
+# SECAO COR QUANTIDADE COR QUANTIDADE COR QUANTIDADE ...
 
--------
-1 D 110 9
-1 D 101 14
-1 D 100 12
-1 D 001 5
-1 D 010 10
+
+1D 6 10 1 20 7 20
+1E 6 20 0 20 4 10
+1F 1 15 4 15 7 10 0 10
+2A 1 20 6 30
+2B 0 20 1 5 6 10 7 15
+2C 4 20 1 10 6 20
+2D 7 50
+2E 1 25 0 10 4 15
+2F 6 10 6 30 7 10
+3A 6 20 0 12 7 18
+3B 0 50
+3C 7 10 4 20 1 20
+3D 6 10 6 30 7 10
+3E 0 25 7 15 4 10
+3F 1 20 7 5 4 5 6 20
+4A 6 25 7 10 1 15
+4B 0 20 4 20 1 10
+4C 6 20 1 20 4 10
