@@ -8,6 +8,9 @@ import threading
 R = 0.097;      # raio da roda em m
 L = 0.381;      # distancia entre as 2 rodas em m
 PI = 3.14159265359
+
+data = []
+
 class Comando(Enum):
     ESQ = "left"
     RETO = "ahead"
@@ -168,6 +171,16 @@ class Robot:
             vLeft, vRight = self.followLine()
             self.move(fator*vLeft, fator*vRight)
 
+        # ## salvar dados de localizacao em arquivo para plotar
+        #
+        # if self.count > 4 and self.count < 1000:
+        #     self.count += 1
+        #     print "count = "+str(self.count)
+        # elif self.count == 1000:
+        #     self.count += 1
+        #     self.writeFile(data)
+
+
 
     def followLine(self):
         if self.comandos[self.i] == Comando.ROT and not self.rotating:
@@ -248,14 +261,13 @@ class Robot:
 
 
     def updatePose(self):
-        if (self.count < 20):
+        if (self.count < 5):
             self.pose = [self.robotPosition[0],self.robotPosition[1],self.robotOrientation[2]]
             self.count += 1
         else:
             vLeft = self.angularDiff[0]*R
             vRight = self.angularDiff[1]*R
             dS = (vLeft+vRight)/2
-            # print " >>>> dS = "+str(dS)+" [vLeft, vRight] = "+str((vLeft,vRight))
 
             dTeta = self.gyro*self.vrepDT
 
@@ -270,6 +282,7 @@ class Robot:
                 self.pose[2] = -PI+(self.pose[2]-PI);
             elif self.pose[2] < -PI:
                 self.pose[2] = PI-(self.pose[2]+PI);
+        data.append((self.pose[0],self.pose[1],self.robotPosition[0],self.robotPosition[1]))
         # print "------------------------------------------------"
         # print "> gt = "+str((self.robotPosition[0],self.robotPosition[1]))+" "+str(self.robotOrientation[2])
         # print "> odo= "+str(self.pose)
@@ -423,7 +436,7 @@ class Robot:
     def rollProduct(self, section):
         if section == False:
             return False,False
-    
+
         with open("mapa_produtos.txt") as f:
             for line in f:
                 if line.startswith(section):
@@ -434,8 +447,8 @@ class Robot:
         i = random.randint(0,(len(data)-1)/2-1)
         color = data[1+(2*i)]
         amount = data[1+(2*i)+1]
-        return color,amount 
-    
+        return color,amount
+
     def rollSection(self):
         corridor = random.randint(1,4)
         if 2 <= corridor <= 3:
@@ -444,21 +457,31 @@ class Robot:
             section = chr(random.randint(65,67)) # A a C
         elif corridor == 1:
             section = chr(random.randint(68,70)) # D a F
-        
-        return str(corridor) + section 
-    
+
+        return str(corridor) + section
+
     def queuePrint(self):
         for s in self.queue:
             print s,
         print ""
-    
+
     def queueAdd(self, section):
         self.queue.append(section)
-    
+
     def queueGetFirst(self):
         if len(self.queue) != 0:
             s = self.queue.pop(0)
             return s
         else:
             return False
-    
+
+    # salva dados em arquivo data.log, para plotar:
+    # 'gnuplot -p script.plt'
+    def writeFile(self,data):
+        print "writing data to data.log..."
+        file = open("data.log","w")
+        for d in data:
+            [file.write(str(n)+' ') for n in d]
+            file.write('\n')
+        file.close()
+        print "finished writing file"
