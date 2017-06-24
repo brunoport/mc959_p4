@@ -2,6 +2,7 @@ from __future__ import division
 from PIL import Image as I
 from math import sin, cos, pi
 from enum import Enum
+from busca import Path
 import vrep,array,time,sys,random
 import threading
 
@@ -36,7 +37,8 @@ class Robot:
     visionSensorHandles=[0,0,0,0]
     blackVisionReading=[False,False,False]
     redVisionReading=[False,False,False]
-    comandos=[Comando.ESQ, Comando.RETO, Comando.RETO, Comando.FOTO, Comando.DIR, Comando.DIR, Comando.FOTO]
+    pos = '1D'
+    comandos=[]
     corredor=2
     faixaASeguir=0
     countFaixas=0
@@ -62,10 +64,11 @@ class Robot:
     andaRetoCount = 0;
 
     def __init__(self, clientID, name):
+        print "initializing robot... "
+
         self.clientID = clientID
         self.name = name
         self.faixaASeguir = self.corredor*2-1
-        print "initializing robot... "
 
         # Get robot handle
         _,self.handle = vrep.simxGetObjectHandle(clientID, name, vrep.simx_opmode_blocking);
@@ -91,6 +94,13 @@ class Robot:
                 print "Error on connecting to ultrasonicSensor " + str(i+1)
             # else:
                 # print "Connected to ultrasonicSensor " + str(i+1)
+
+        self.pPlanner = Path.PathPlanner()
+        print "initial pos = "+str(self.pos)
+        self.pos,self.comandos = self.pPlanner.getPath(self.pos,'3B')
+        print "comandos = "+str(self.comandos)
+        print "finalPos = "+str(self.pos)
+
 
     def resetFaixaASeguir(self):
         print "RESET FAIXA"
@@ -179,6 +189,7 @@ class Robot:
         # elif self.count == 1000:
         #     self.count += 1
         #     self.writeFile(data)
+
 
 
 

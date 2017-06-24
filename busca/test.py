@@ -1,21 +1,10 @@
-from Vertex import Vertex 
-from Arc import Arc
-from Constant import Constant
-from Graph import Graph
+import Path
 
-cst = Constant()
-vertices = []
-marks = {}
-transitionMark = {}
-transitionCorridor = {}
-arcs = []
-graph = Graph()
-#graph.printArcs()
+pPlanner = Path.PathPlanner()
+
+# graph.printArcs()
 source = raw_input("Posicao atual ?\n")
 target = raw_input("Posicao desejada ?\n")
-lastPos,solution = graph.actionsToObjective(source,target)
-print solution
-print "lastPos : "+lastPos.getLabel()
-#markCUp1
-#markBDown3
-#markBUp3
+lastPos,solution = pPlanner.getPath(source,target)
+print "solution = "+str(solution)
+print "lastPos = "+str(lastPos)
