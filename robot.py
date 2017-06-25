@@ -94,7 +94,7 @@ class Robot:
         self.pPlanner = Path.PathPlanner()
         print "initial pos = "+str(self.pos)
         self.pos,self.comandos = self.pPlanner.getPath(self.pos,'3B')
-        self.comandos = [Comando.RETO, Comando.ESQ, Comando.RETO, Comando.RETO, Comando.FOTO, Comando.DIR, Comando.FOTO]
+        self.comandos = [Comando.ESQ, Comando.RETO, Comando.RETO, Comando.ROT_CAM, Comando.FOTO, Comando.DIR, Comando.ESQ, Comando.FOTO]
         print "comandos = "+str(self.comandos)
         print "finalPos = "+str(self.pos)
 
@@ -145,6 +145,21 @@ class Robot:
                 print "BIFURCACAO " + str(self.bifurcacao)
                 self.comandoAtual = self.comandos[self.i]
                 print "COMANDO " + str(self.i) + " " + str(self.comandoAtual)
+
+                if self.comandoAtual == Comando.ROT:
+                    print "ROTATION"
+                    self.rotate180()
+                    self.i += 1
+                    self.comandoAtual = self.comandos[self.i]
+                    self.countdown = 1
+
+                if self.comandoAtual == Comando.ROT_CAM:
+                    print "ROTATE CAMERA"
+                    self.rotateCamera()
+                    self.i += 1
+                    self.comandoAtual = self.comandos[self.i]
+                    self.countdown = 1
+
                 if self.comandoAtual == Comando.ESQ:
                     print "ESQUERDA"
                     self.andaRetoCount = 0
@@ -160,12 +175,9 @@ class Robot:
                 elif self.comandoAtual == Comando.DIR:
                     print "DIREITA"
                     self.andaRetoCount = 0
-                elif self.comandoAtual == Comando.ROT:
-                    print "ROTATION"
                 elif self.comandoAtual == Comando.FOTO:
                     print "TAKE PICTURE"
                     self.countdown = 5
-
                     self.distanceAfterRedMarker = 0
                     self.stoppingAtRedMarker = True
 
@@ -173,7 +185,7 @@ class Robot:
         elif not self.bifurcacao:
             self.countdown -=1
         if self.countdown==0 and self.comandoAtual == Comando.RETO:
-            print "ACABOU A BIFURCACAO"
+            print "ACABOU A BIFURCACAO #1"
             self.sobreBifurcacao = False
             self.comandoAtual = Comando.NONE
         vLeft, vRight = self.followLine()
@@ -209,6 +221,7 @@ class Robot:
                 time.sleep(0.1) # espera o tranco
                 self.takePicture("Camera_Gondola")
                 self.comandoAtual = Comando.NONE
+                self.sobreBifurcacao = False
                 return 1,1
             self.distanceAfterRedMarker = self.distanceAfterRedMarker + self.distanceForward()
             print "ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker)
@@ -219,16 +232,19 @@ class Robot:
         if self.comandoAtual==Comando.RETO:
             return 2,2
         if self.blackVisionReading[2] and not self.comandoAtual == Comando.ESQ:#direita
+            print "Reset AndaRetoCount"
             self.andaRetoCount = 0
             return 2,1
         if self.blackVisionReading[0] and not self.comandoAtual == Comando.DIR:#esquerda
             self.andaRetoCount = 0
+            print "Reset AndaRetoCount"
             return 1,2
 
         self.andaRetoCount += 1
+        print "AndaRetoCount:", self.andaRetoCount
 
-        if self.andaRetoCount ==10 and (self.comandoAtual == Comando.ESQ or self.comandoAtual == Comando.DIR):
-            print "ACABOU A BIFURCACAO"
+        if self.andaRetoCount ==13 and (self.comandoAtual == Comando.ESQ or self.comandoAtual == Comando.DIR):
+            print "ACABOU A BIFURCACAO #2"
             self.sobreBifurcacao = False
             self.comandoAtual = Comando.NONE
 
@@ -399,6 +415,11 @@ class Robot:
         im = im.transpose(I.FLIP_LEFT_RIGHT)
         im.save('images/' + visionSensorName + '.png', 'png')
         print 'done!'
+
+        #se a camera foi girada antes de tirar a foto, a gente a reposiciona depois de tirar a foto
+        if(self.comandos[self.i - 1] == Comando.ROT_CAM):
+            self.rotateCamera()
+
         self.sobreBifurcacao = False
         self.comandoAtual = Comando.NONE
 
