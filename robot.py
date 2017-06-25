@@ -55,6 +55,8 @@ class Robot:
     comandoAtual = Comando.NONE
     ignoraProximaBifurcacao = False
 
+    destino = ""
+
     pose = [0,0,PI/2]          # [x,y,teta]
 
     andaRetoCount = 0;
@@ -89,13 +91,40 @@ class Robot:
             if r != vrep.simx_return_ok:
                 print "Error on connecting to ultrasonicSensor " + str(i+1)
             # else:
+
+
                 # print "Connected to ultrasonicSensor " + str(i+1)
 
+                # rob.queueAdd(rob.rollSection())   < insere uma nova secao na fila de locais
+                #                                   < que devem ser visitados
+                #
+                # section = rob.queueGetFirst()     < extrai a proxima secao da fila
+                #
+                # product = rob.rollProduct(section) < sorteia um produto a ser analisado.
+                #                                    < product eh uma tupla (COR, QUANTIDADE)
+                #                                    < que determina quantos produtos de cor
+                #                                    < COR devem estar presentes na secao
+
+        self.destino = self.pos
+        self.sorteiaComandos()
+
+    def sorteiaDestino(self):
+
+        while self.destino == self.pos:
+            self.queueAdd(self.rollSection())
+            self.destino = self.queueGetFirst()
+
+            print "DESTINO : ", self.destino
+
+    def sorteiaComandos(self):
+        self.sorteiaDestino()
         self.pPlanner = Path.PathPlanner()
-        print "initial pos = "+str(self.pos)
-        self.pos,self.comandos = self.pPlanner.getPath(self.pos,'3B')
-        print "comandos = "+str(self.comandos)
-        print "finalPos = "+str(self.pos)
+        print "initial pos = " + str(self.pos)
+        self.pos, self.comandos = self.pPlanner.getPath(self.pos, self.destino)
+        print "comandos = " + str(self.comandos)
+        print "finalPos = " + str(self.pos)
+        self.i = -1
+
 
 
     def resetFaixaASeguir(self):
@@ -130,7 +159,21 @@ class Robot:
         self.readVision()
         #vLeft, vRight = self.avoidObstacle()
         self.bifurcacao = self.checkBifurcacao()
-        if self.bifurcacao and not self.sobreBifurcacao:
+
+        if len(self.queue) == 0 and len(self.comandos) == 0:
+            self.move(0,0)
+            return
+
+        if self.i == -1:
+            print "IGNORE FIRST"
+            if self.comandos[0] == Comando.ROT:
+                print "ROTATION"
+                self.rotate180()
+
+            self.i += 1
+
+
+        elif self.bifurcacao and not self.sobreBifurcacao:
             if self.ignoraProximaBifurcacao:
                 self.ignoraProximaBifurcacao = False
                 self.sobreBifurcacao = True
@@ -139,10 +182,11 @@ class Robot:
 
             else:
                 self.i+=1
+                self.comandoAtual = self.comandos[self.i]
+
                 self.faixaASeguir-=1
                 self.sobreBifurcacao = True
                 print "BIFURCACAO " + str(self.bifurcacao)
-                self.comandoAtual = self.comandos[self.i]
                 print "COMANDO " + str(self.i) + " " + str(self.comandoAtual)
 
 
@@ -217,32 +261,35 @@ class Robot:
             return self.rotate180()
 
         if self.stoppingAtRedMarker:
-            if self.distanceForward() < 0.005:
+            print "DISTANCE FORWARD ", self.distanceForward()
+            if abs(self.distanceForward()) < 0.005:
                 self.stoppingAtRedMarker = False
                 time.sleep(0.1) # espera o tranco
                 self.takePicture("Camera_Gondola")
                 self.comandoAtual = Comando.NONE
                 self.sobreBifurcacao = False
                 return 1,1
-            self.distanceAfterRedMarker = self.distanceAfterRedMarker + self.distanceForward()
+
+            if self.distanceForward() == -1:
+                self.distanceAfterRedMarker = self.distanceAfterRedMarker + 0.02
+            else:
+                self.distanceAfterRedMarker = self.distanceAfterRedMarker + self.distanceForward()
             print "ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker)
-            if self.distanceAfterRedMarker > 0.5:
+            if self.distanceAfterRedMarker > 0.9:
+                print "ANDOU 0.5"
                 return 0,0
 
 
         if self.comandoAtual==Comando.RETO:
             return 2,2
         if self.blackVisionReading[2] and not self.comandoAtual == Comando.ESQ:#direita
-            print "Reset AndaRetoCount"
             self.andaRetoCount = 0
             return 2,1
         if self.blackVisionReading[0] and not self.comandoAtual == Comando.DIR:#esquerda
             self.andaRetoCount = 0
-            print "Reset AndaRetoCount"
             return 1,2
 
         self.andaRetoCount += 1
-        print "AndaRetoCount:", self.andaRetoCount
 
         if self.andaRetoCount ==13 and (self.comandoAtual == Comando.ESQ or self.comandoAtual == Comando.DIR):
             print "ACABOU A BIFURCACAO #2"
@@ -423,6 +470,8 @@ class Robot:
 
         self.sobreBifurcacao = False
         self.comandoAtual = Comando.NONE
+
+        self.sorteiaComandos()
 
     def updateEncoders(self):
         _,self.encoder[0] = vrep.simxGetJointPosition(self.clientID, self.motorHandle[0], vrep.simx_opmode_oneshot);
