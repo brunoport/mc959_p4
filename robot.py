@@ -53,7 +53,7 @@ class Robot:
     count = 0
 
     comandoAtual = Comando.NONE
-    ignoraProximaBifurcaçao = True
+    ignoraProximaBifurcacao = False
 
     pose = [0,0,PI/2]          # [x,y,teta]
 
@@ -94,6 +94,7 @@ class Robot:
         self.pPlanner = Path.PathPlanner()
         print "initial pos = "+str(self.pos)
         self.pos,self.comandos = self.pPlanner.getPath(self.pos,'3B')
+        self.comandos = [Comando.RETO, Comando.ESQ, Comando.RETO, Comando.RETO, Comando.FOTO, Comando.DIR, Comando.FOTO]
         print "comandos = "+str(self.comandos)
         print "finalPos = "+str(self.pos)
 
@@ -131,34 +132,42 @@ class Robot:
         #vLeft, vRight = self.avoidObstacle()
         self.bifurcacao = self.checkBifurcacao()
         if self.bifurcacao and not self.sobreBifurcacao:
-            self.i+=1
-            self.faixaASeguir-=1
-            self.sobreBifurcacao = True
-            print "BIFURCACAO " + str(self.bifurcacao)
-            self.comandoAtual = self.comandos[self.i]
-            print "COMANDO " + str(self.i) + " " + str(self.comandoAtual)
-            if self.comandoAtual == Comando.ESQ:
-                print "ESQUERDA"
-                self.andaRetoCount = 0
-            elif self.comandoAtual == Comando.RETO:
-                if True in self.redVisionReading:
-                    print "RETO RED"
-                    self.countdown = 5
-                    self.comandoAtual = Comando.NONE
-                else:
-                    print "RETO NORMAL"
-                    self.countdown =  69
-            elif self.comandoAtual == Comando.DIR:
-                print "DIREITA"
-                self.andaRetoCount = 0
-            elif self.comandoAtual == Comando.ROT:
-                print "ROTATION"
-            elif self.comandoAtual == Comando.FOTO:
-                print "TAKE PICTURE"
+            if self.ignoraProximaBifurcacao:
+                self.ignoraProximaBifurcacao = False
+                self.sobreBifurcacao = True
+                self.comandoAtual = Comando.RETO
                 self.countdown = 5
 
-                self.distanceAfterRedMarker = 0
-                self.stoppingAtRedMarker = True
+            else:
+                self.i+=1
+                self.faixaASeguir-=1
+                self.sobreBifurcacao = True
+                print "BIFURCACAO " + str(self.bifurcacao)
+                self.comandoAtual = self.comandos[self.i]
+                print "COMANDO " + str(self.i) + " " + str(self.comandoAtual)
+                if self.comandoAtual == Comando.ESQ:
+                    print "ESQUERDA"
+                    self.andaRetoCount = 0
+                elif self.comandoAtual == Comando.RETO:
+                    if True in self.redVisionReading:
+                        print "RETO RED"
+                        self.countdown = 5
+                        self.comandoAtual = Comando.RETO
+                    else:
+                        print "RETO NORMAL"
+                        self.countdown =  5
+                        self.ignoraProximaBifurcacao = True
+                elif self.comandoAtual == Comando.DIR:
+                    print "DIREITA"
+                    self.andaRetoCount = 0
+                elif self.comandoAtual == Comando.ROT:
+                    print "ROTATION"
+                elif self.comandoAtual == Comando.FOTO:
+                    print "TAKE PICTURE"
+                    self.countdown = 5
+
+                    self.distanceAfterRedMarker = 0
+                    self.stoppingAtRedMarker = True
 
 
         elif not self.bifurcacao:
@@ -390,6 +399,8 @@ class Robot:
         im = im.transpose(I.FLIP_LEFT_RIGHT)
         im.save('images/' + visionSensorName + '.png', 'png')
         print 'done!'
+        self.sobreBifurcacao = False
+        self.comandoAtual = Comando.NONE
 
     def updateEncoders(self):
         _,self.encoder[0] = vrep.simxGetJointPosition(self.clientID, self.motorHandle[0], vrep.simx_opmode_oneshot);
