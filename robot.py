@@ -52,6 +52,9 @@ class Robot:
     test = 0
     count = 0
 
+    comandoAtual = Comando.NONE
+    ignoraProximaBifurcaçao = True
+
     pose = [0,0,PI/2]          # [x,y,teta]
 
     andaRetoCount = 0;
@@ -132,24 +135,25 @@ class Robot:
             self.faixaASeguir-=1
             self.sobreBifurcacao = True
             print "BIFURCACAO " + str(self.bifurcacao)
-            print "COMANDO " + str(self.i) + " " + str(self.comandos[self.i])
-            if self.comandos[self.i] == Comando.ESQ:
+            self.comandoAtual = self.comandos[self.i]
+            print "COMANDO " + str(self.i) + " " + str(self.comandoAtual)
+            if self.comandoAtual == Comando.ESQ:
                 print "ESQUERDA"
                 self.andaRetoCount = 0
-            elif self.comandos[self.i] == Comando.RETO:
+            elif self.comandoAtual == Comando.RETO:
                 if True in self.redVisionReading:
                     print "RETO RED"
                     self.countdown = 5
-                    self.comandos[self.i] = Comando.NONE
+                    self.comandoAtual = Comando.NONE
                 else:
                     print "RETO NORMAL"
                     self.countdown =  69
-            elif self.comandos[self.i] == Comando.DIR:
+            elif self.comandoAtual == Comando.DIR:
                 print "DIREITA"
                 self.andaRetoCount = 0
-            elif self.comandos[self.i] == Comando.ROT:
+            elif self.comandoAtual == Comando.ROT:
                 print "ROTATION"
-            elif self.comandos[self.i] == Comando.FOTO:
+            elif self.comandoAtual == Comando.FOTO:
                 print "TAKE PICTURE"
                 self.countdown = 5
 
@@ -159,10 +163,10 @@ class Robot:
 
         elif not self.bifurcacao:
             self.countdown -=1
-        if self.countdown==0 and self.comandos[self.i] == Comando.RETO:
+        if self.countdown==0 and self.comandoAtual == Comando.RETO:
             print "ACABOU A BIFURCACAO"
             self.sobreBifurcacao = False
-            self.comandos[self.i] = Comando.NONE
+            self.comandoAtual = Comando.NONE
         vLeft, vRight = self.followLine()
         self.move(fator*vLeft, fator*vRight)
 
@@ -187,7 +191,7 @@ class Robot:
 
 
     def followLine(self):
-        if self.comandos[self.i] == Comando.ROT and not self.rotating:
+        if self.comandoAtual == Comando.ROT and not self.rotating:
             return self.rotate180()
 
         if self.stoppingAtRedMarker:
@@ -195,7 +199,7 @@ class Robot:
                 self.stoppingAtRedMarker = False
                 time.sleep(0.1) # espera o tranco
                 self.takePicture("Camera_Gondola")
-                self.comandos[self.i] = Comando.NONE
+                self.comandoAtual = Comando.NONE
                 return 1,1
             self.distanceAfterRedMarker = self.distanceAfterRedMarker + self.distanceForward()
             print "ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker)
@@ -203,21 +207,21 @@ class Robot:
                 return 0,0
 
 
-        if self.comandos[self.i]==Comando.RETO:
+        if self.comandoAtual==Comando.RETO:
             return 2,2
-        if self.blackVisionReading[2] and not self.comandos[self.i] == Comando.ESQ:#direita
+        if self.blackVisionReading[2] and not self.comandoAtual == Comando.ESQ:#direita
             self.andaRetoCount = 0
             return 2,1
-        if self.blackVisionReading[0] and not self.comandos[self.i] == Comando.DIR:#esquerda
+        if self.blackVisionReading[0] and not self.comandoAtual == Comando.DIR:#esquerda
             self.andaRetoCount = 0
             return 1,2
 
         self.andaRetoCount += 1
 
-        if self.andaRetoCount ==10 and (self.comandos[self.i] == Comando.ESQ or self.comandos[self.i] == Comando.DIR):
+        if self.andaRetoCount ==10 and (self.comandoAtual == Comando.ESQ or self.comandoAtual == Comando.DIR):
             print "ACABOU A BIFURCACAO"
             self.sobreBifurcacao = False
-            self.comandos[self.i] = Comando.NONE
+            self.comandoAtual = Comando.NONE
 
         return 2,2
 
