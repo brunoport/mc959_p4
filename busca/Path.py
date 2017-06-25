@@ -10,6 +10,9 @@ from Graph import Graph
 # C   1C   2C   3C   4C
 
 mark = {
+    '1A':'markADown1',
+    '1B':'markBDown1',
+    '1C':'markCDown1',
     '1D':'markAUp1',
     '1E':'markBUp1',
     '1F':'markCUp1',
@@ -27,7 +30,10 @@ mark = {
     '3F':'markCUp3',
     '4A':'markADown4',
     '4B':'markBDown4',
-    '4C':'markCDown4'
+    '4C':'markCDown4',
+    '4D':'markAUp4',
+    '4E':'markBUp4',
+    '4F':'markCUp4'
 }
 
 def getSection(pos):
