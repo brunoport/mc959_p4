@@ -1,7 +1,7 @@
 from __future__ import division
 from PIL import Image as I
 from math import sin, cos, pi
-from enum import Enum
+from busca.Graph import Comando
 from busca import Path
 import vrep,array,time,sys,random
 import threading
@@ -12,13 +12,6 @@ PI = 3.14159265359
 
 data = []
 
-class Comando(Enum):
-    ESQ = "left"
-    RETO = "ahead"
-    DIR = "right"
-    ROT = "180"
-    FOTO = "pic"
-    NONE = "none"
 
 class Robot:
     """Classe robo do V-REP"""

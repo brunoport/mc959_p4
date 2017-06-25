@@ -1,7 +1,17 @@
 from Constant import Constant
 from Vertex import Vertex
 from Arc import Arc
+from enum import Enum
 
+
+class Comando(Enum):
+    ESQ = "left"
+    RETO = "ahead"
+    DIR = "right"
+    ROT = "180"
+    ROT_CAM = "rotateCamera"
+    FOTO = "pic"
+    NONE = "none"
 
 class Graph:
     def __init__(self):
@@ -46,7 +56,7 @@ class Graph:
         father = fathers[current.getLabel()]
         while father:
             arc = current.getArcFrom(father)
-            solution.insert(0, arc.getAction())
+            solution.insert(0, Comando(arc.getAction()))
             current = father
             father = fathers[current.getLabel()]
         return solution
@@ -58,8 +68,8 @@ class Graph:
         sett, fathers = self.bfs(source)
         solution = self.constructSolution(source, target, fathers)
         print solution[len(solution) - 1]
-        if (solution[len(solution) - 1] == "180"):
-            solution[len(solution) - 1] = "rotateCamera"
+        if (solution[len(solution) - 1] == Comando.ROT):
+            solution[len(solution) - 1] = Comando.ROT_CAM
             lastPos = fathers[target.getLabel()]
         return lastPos, solution
 
