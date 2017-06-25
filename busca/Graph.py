@@ -56,9 +56,9 @@ class Graph:
         father = fathers[current.getLabel()]
         while father:
             arc = current.getArcFrom(father)
-            action = arc.getAction
+            action = arc.getAction()
             if(action != "nothing"):
-            	solution.insert(0, Comando(arc.getAction()))
+            	solution.insert(0, Comando(action))
             current = father
             father = fathers[current.getLabel()]
         return solution
@@ -69,7 +69,7 @@ class Graph:
         lastPos = target
         sett, fathers = self.bfs(source)
         solution = self.constructSolution(source, target, fathers)
-        print solution[len(solution) - 1]
+        #print solution[len(solution) - 1]
         if (solution[len(solution) - 1] == Comando.ROT):
             solution[len(solution) - 1] = Comando.ROT_CAM
             lastPos = fathers[target.getLabel()]
