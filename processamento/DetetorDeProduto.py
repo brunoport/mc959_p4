@@ -19,6 +19,7 @@ class DetetorDeProduto:
 	def detect(self):
 		# FIND IMAGE
 		image = cv2.imread("../images/Camera_Esquerda.png")
+
 		grayFull = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
 		resized = imutils.resize(image,width=300)
 		ratio = image.shape[0]/float(resized.shape[0])
@@ -31,6 +32,7 @@ class DetetorDeProduto:
 		grayFull[grayFull == 0] = 1
 		rectangles = []
 		for c in cnts:
+			#print "hello"
 			M = cv2.moments(c)
 			if(M["m10"] != 0 and M["m00"] != 0 and M["m01"]!=0):
 				cX = int((M["m10"] / M["m00"]) * ratio)

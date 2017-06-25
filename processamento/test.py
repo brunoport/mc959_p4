@@ -7,15 +7,15 @@ from DetetorDeProduto import DetetorDeProduto
 	# DARK BLUE = 6
 	# PURPLE = 7
 dp = DetetorDeProduto()
-print "yellow : ",
-dp.detectColor(0)
-print "green : ",
-dp.detectColor(1)
-print "clear blue : ",
-dp.detectColor(2),
-print "red : ",
-dp.detectColor(4)
-print "dark blue : ",
-dp.detectColor(6)
-print "purple : ",
-dp.detectColor(7)
+print "yellow : "
+print dp.detectColor(0)
+print "green : "
+print dp.detectColor(1)
+print "clear blue : "
+print dp.detectColor(2)
+print "red : "
+print dp.detectColor(4)
+print "dark blue : "
+print dp.detectColor(6)
+print "purple : "
+print dp.detectColor(7)

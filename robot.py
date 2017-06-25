@@ -420,7 +420,7 @@ class Robot:
         # RULES
         if(frontVal == FAR and (sideVal == FAR or sideVal == MEDIUM)):
             return FREE
-        elif(frontVal == FAR):
+        elif(frontVal == FAR or sideVal == NEAR):
             return STOP
         elif(frontVal == MEDIUM):
             return SLOW
