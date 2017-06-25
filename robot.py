@@ -94,7 +94,6 @@ class Robot:
         self.pPlanner = Path.PathPlanner()
         print "initial pos = "+str(self.pos)
         self.pos,self.comandos = self.pPlanner.getPath(self.pos,'3B')
-        self.comandos = [Comando.ESQ, Comando.RETO, Comando.RETO, Comando.ROT_CAM, Comando.FOTO, Comando.DIR, Comando.ESQ, Comando.FOTO]
         print "comandos = "+str(self.comandos)
         print "finalPos = "+str(self.pos)
 
@@ -146,12 +145,7 @@ class Robot:
                 self.comandoAtual = self.comandos[self.i]
                 print "COMANDO " + str(self.i) + " " + str(self.comandoAtual)
 
-                if self.comandoAtual == Comando.ROT:
-                    print "ROTATION"
-                    self.rotate180()
-                    self.i += 1
-                    self.comandoAtual = self.comandos[self.i]
-                    self.countdown = 1
+
 
                 if self.comandoAtual == Comando.ROT_CAM:
                     print "ROTATE CAMERA"
@@ -160,7 +154,14 @@ class Robot:
                     self.comandoAtual = self.comandos[self.i]
                     self.countdown = 1
 
-                if self.comandoAtual == Comando.ESQ:
+                if self.comandoAtual == Comando.ROT:
+                    print "ROTATION"
+                    self.rotate180()
+                    self.i += 1
+                    self.comandoAtual = self.comandos[self.i]
+                    self.countdown = 1
+
+                elif self.comandoAtual == Comando.ESQ:
                     print "ESQUERDA"
                     self.andaRetoCount = 0
                 elif self.comandoAtual == Comando.RETO:
