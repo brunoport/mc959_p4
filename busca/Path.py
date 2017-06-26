@@ -2,7 +2,7 @@
 # from Arc import Arc
 # from Constant import Constant
 from Graph import Graph
-from busca.Graph import Comando
+from Graph import Comando
 
 # positions with marks
 #      1    2    3    4
