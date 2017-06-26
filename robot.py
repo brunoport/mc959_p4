@@ -105,15 +105,16 @@ class Robot:
                 #                                    < que determina quantos produtos de cor
                 #                                    < COR devem estar presentes na secao
 
-        self.destino = self.pos
+
         self.sorteiaComandos()
 
     def sorteiaDestino(self):
-
+        self.destino = self.pos
         while self.destino == self.pos:
             self.queueAdd(self.rollSection())
             self.destino = self.queueGetFirst()
 
+            self.destino = "1B"
             print "DESTINO : ", self.destino
 
     def sorteiaComandos(self):
@@ -164,12 +165,9 @@ class Robot:
             self.move(0,0)
             return
 
-        if self.i == -1:
-            print "IGNORE FIRST"
-            if self.comandos[0] == Comando.ROT:
-                print "ROTATION"
-                self.rotate180()
-
+        if self.i == -1 and self.comandos[0] == Comando.ROT:
+            print "ROTATION"
+            self.rotate180()
             self.i += 1
 
 

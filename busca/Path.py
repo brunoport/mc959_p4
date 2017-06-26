@@ -2,6 +2,7 @@
 # from Arc import Arc
 # from Constant import Constant
 from Graph import Graph
+from busca.Graph import Comando
 
 # positions with marks
 #      1    2    3    4
@@ -53,4 +54,7 @@ class PathPlanner:
         lastPos = getSection(lastPos.getLabel())
         # print "solution = "+str(solution)
         # print "lastPos = "+str(lastPos)
+
+        solution.append(Comando.FOTO)
+
         return lastPos,solution
