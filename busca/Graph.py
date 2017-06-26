@@ -140,19 +140,19 @@ class Graph:
         transitionCorridor34DownLeft = self.verticesDict[
             "transitionCorridor3-4DownLeft"]  # transitionCorridor3-4DownLeft
         arc = transitionCorridor12UpLeft.getArcTo(markADown1)
-        arc.setAction("ahead")
+        arc.setAction("nothing")
         arc = transitionCorridor12UpRight.getArcFrom(markAUp1)
         arc.setAction("ahead")
         arc = transitionCorridor12DownLeft.getArcTo(markCUp1)
-        arc.setAction("ahead")
+        arc.setAction("nothing")
         arc = transitionCorridor12DownRight.getArcFrom(markCDown1)
         arc.setAction("ahead")
         arc = transitionCorridor34UpRight.getArcTo(markADown4)
-        arc.setAction("ahead")
+        arc.setAction("nothing")
         arc = transitionCorridor34UpLeft.getArcFrom(markAUp4)
         arc.setAction("ahead")
         arc = transitionCorridor34DownRight.getArcTo(markCUp4)
-        arc.setAction("ahead")
+        arc.setAction("nothing")
         arc = transitionCorridor34DownLeft.getArcFrom(markCDown4)
         arc.setAction("ahead")
 
