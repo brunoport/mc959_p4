@@ -9,8 +9,6 @@ if clientID!=-1:
 
     rob = robot.Robot(clientID, "Pioneer_p3dx")
 
-    rob.takePicture("Camera_Gondola")
-
     while True:
         rob.run()
     vrep.simxFinish(clientID)

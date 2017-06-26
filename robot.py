@@ -4,6 +4,8 @@ from math import sin, cos, pi
 from busca.Graph import Comando
 from busca import Path
 import vrep,array,time,sys,random
+from processamento import DetetorDeProduto
+
 import threading
 
 R = 0.097;      # raio da roda em m
@@ -111,10 +113,7 @@ class Robot:
     def sorteiaDestino(self):
         self.destino = self.pos
         while self.destino == self.pos:
-            self.queueAdd(self.rollSection())
-            self.destino = self.queueGetFirst()
-
-            self.destino = "1B"
+            self.destino = self.rollSection()
             print "DESTINO : ", self.destino
 
     def sorteiaComandos(self):
@@ -165,13 +164,8 @@ class Robot:
             self.move(0,0)
             return
 
-        if self.i == -1 and self.comandos[0] == Comando.ROT:
-            print "ROTATION"
-            self.rotate180()
-            self.i += 1
 
-
-        elif self.bifurcacao and not self.sobreBifurcacao:
+        if self.i == -1 or (self.bifurcacao and not self.sobreBifurcacao):
             if self.ignoraProximaBifurcacao:
                 self.ignoraProximaBifurcacao = False
                 self.sobreBifurcacao = True
@@ -461,6 +455,16 @@ class Robot:
         im = im.transpose(I.FLIP_LEFT_RIGHT)
         im.save('images/' + visionSensorName + '.png', 'png')
         print 'done!'
+
+        produto, quantidadeEsperada = self.rollProduct(self.destino)
+
+        #tratar imagem
+        # dp = DetetorDeProduto.DetetorDeProduto()
+        # produtosAchados = dp.detectColor(produto)
+        #
+        # print "ESPERADOS : ", quantidadeEsperada
+        # print "ACHADOS : ", produtosAchados
+
 
         #se a camera foi girada antes de tirar a foto, a gente a reposiciona depois de tirar a foto
         if(self.comandos[self.i - 1] == Comando.ROT_CAM):
