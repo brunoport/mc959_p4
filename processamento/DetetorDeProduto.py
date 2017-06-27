@@ -18,7 +18,7 @@ class DetetorDeProduto:
 		return numberCubes[color]
 	def detect(self):
 		# FIND IMAGE
-		image = cv2.imread("../images/Camera_Esquerda.png")
+		image = cv2.imread("toto.jpeg")
 
 		grayFull = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
 		resized = imutils.resize(image,width=300)
@@ -42,6 +42,7 @@ class DetetorDeProduto:
 				c = c.astype("int")
 				x,y,w,h = cv2.boundingRect(c)
 				if w > 250:
+					print w
 					cv2.drawContours(grayFull, [c], -1, 0, -1)
 					pts = np.argwhere(grayFull == 0)
 					grayFull[grayFull == 0] = 1
