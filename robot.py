@@ -128,6 +128,10 @@ class Robot:
         self.pPlanner = Path.PathPlanner()
         print "initial pos = " + str(self.pos)
         self.pos, self.comandos = self.pPlanner.getPath(self.pos, self.destino)
+
+        if self.comandos[self.i] == Comando.ESQ or self.comandos[self.i] == Comando.DIR :
+            self.comandos.insert(0, Comando.RETO)
+
         print "comandos = " + str(self.comandos)
         print "finalPos = " + str(self.pos)
         self.i = -1
@@ -173,6 +177,10 @@ class Robot:
 
 
         if self.i == -1 or (self.bifurcacao and not self.sobreBifurcacao):
+
+            if self.i == -1:
+                print "PRIMEIRO COMANDO !"
+
             if self.ignoraProximaBifurcacao:
                 self.ignoraProximaBifurcacao = False
                 self.sobreBifurcacao = True
@@ -207,8 +215,9 @@ class Robot:
                 elif self.comandoAtual == Comando.ESQ:
                     print "ESQUERDA"
                     self.andaRetoCount = 0
+                    self.andaRetoCount = 0
                 elif self.comandoAtual == Comando.RETO:
-                    if True in self.redVisionReading:
+                    if True in self.redVisionReading or self.i == 0 or self.comandos[self.i-1] == Comando.ROT:
                         print "RETO RED"
                         self.countdown = 5
                         self.comandoAtual = Comando.RETO
@@ -478,11 +487,11 @@ class Robot:
         produto, quantidadeEsperada = self.rollProduct(self.destino)
 
         #tratar imagem
-        # dp = DetetorDeProduto.DetetorDeProduto()
-        # produtosAchados = dp.detectColor(produto)
-        #
-        # print "ESPERADOS : ", quantidadeEsperada
-        # print "ACHADOS : ", produtosAchados
+        dp = DetetorDeProduto.DetetorDeProduto()
+        produtosAchados = dp.detectColor(produto)
+
+        print "ESPERADOS : ", quantidadeEsperada
+        print "ACHADOS : ", produtosAchados
 
 
         #se a camera foi girada antes de tirar a foto, a gente a reposiciona depois de tirar a foto
