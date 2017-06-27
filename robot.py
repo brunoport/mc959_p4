@@ -4,7 +4,8 @@ from math import sin, cos, pi
 from busca.Graph import Comando
 from busca import Path
 import vrep,array,time,sys,random
-from processamento import DetetorDeProduto
+from processamento.DetetorDeProduto import DetetorDeProduto
+
 
 import threading
 
@@ -66,6 +67,7 @@ class Robot:
     andaRetoCount = 0;
 
     def __init__(self, clientID, name):
+
         print "initializing robot... "
 
         self.clientID = clientID
@@ -264,7 +266,7 @@ class Robot:
             return self.rotate180()
 
         if self.stoppingAtRedMarker:
-            self.debug("DISTANCE FORWARD " + self.distanceForward())
+            self.debug("DISTANCE FORWARD " + str(self.distanceForward()))
             if abs(self.distanceForward()) < 0.005:
                 self.stoppingAtRedMarker = False
                 time.sleep(0.1) # espera o tranco
@@ -470,7 +472,7 @@ class Robot:
         produto, quantidadeEsperada = self.rollProduct(self.destino)
 
         #tratar imagem
-        dp = DetetorDeProduto.DetetorDeProduto()
+        dp = DetetorDeProduto()
         produtosAchados = dp.detectColor(produto)
         print "PRODUTO : ", produto
         print "ESPERADOS : ", quantidadeEsperada
