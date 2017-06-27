@@ -53,7 +53,10 @@ class DetetorDeProduto:
                     pts = np.argwhere(grayFull == 0)
                     grayFull[grayFull == 0] = 1
                     rectangles.append((cX, cY, image[pts[:, 0], pts[:, 1]]))
-        wToMean = float(wToMean / coutoursCounted)
+        if coutoursCounted == 0:
+            wToMean = 0
+        else:
+            wToMean = float(wToMean / coutoursCounted)
         rectangles.sort(key=lambda tup: tup[1])
         dc = DetetorDeColor()
         limiares = [1250, 1300, 1300, 1600, 1800]  # para w = 380
@@ -66,7 +69,10 @@ class DetetorDeProduto:
             names, counts = dc.find_color(rect)
             for j in range(len(names)):
                 if counts[j] >= 20:
-                    numberCubes[j] += int(counts[j] / limiaresToUse[i]) + 1
+                    try:
+                        numberCubes[j] += int(counts[j] / limiaresToUse[i]) + 1
+                    except:
+                        pass
         return numberCubes
 
 # =======
@@ -112,3 +118,4 @@ class DetetorDeProduto:
 #                     numberCubes[j] += int(counts[j] / limiares[i]) + 1
 #         return numberCubes
 # >>>>>>> b69df391bff07ae85f59d406cdb650ddfde01ddc
+
