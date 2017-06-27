@@ -208,8 +208,9 @@ class Robot:
                 elif self.comandoAtual == Comando.ESQ:
                     print "ESQUERDA"
                     self.andaRetoCount = 0
+                    self.andaRetoCount = 0
                 elif self.comandoAtual == Comando.RETO:
-                    if True in self.redVisionReading or self.i == 0 or self.commandos[self.i-1] == Comando.ROT:
+                    if True in self.redVisionReading or self.i == 0 or self.comandos[self.i-1] == Comando.ROT:
                         print "RETO RED"
                         self.countdown = 5
                         self.comandoAtual = Comando.RETO
@@ -467,11 +468,11 @@ class Robot:
         produto, quantidadeEsperada = self.rollProduct(self.destino)
 
         #tratar imagem
-        # dp = DetetorDeProduto.DetetorDeProduto()
-        # produtosAchados = dp.detectColor(produto)
-        #
-        # print "ESPERADOS : ", quantidadeEsperada
-        # print "ACHADOS : ", produtosAchados
+        dp = DetetorDeProduto.DetetorDeProduto()
+        produtosAchados = dp.detectColor(produto)
+
+        print "ESPERADOS : ", quantidadeEsperada
+        print "ACHADOS : ", produtosAchados
 
 
         #se a camera foi girada antes de tirar a foto, a gente a reposiciona depois de tirar a foto
