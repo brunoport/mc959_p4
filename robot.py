@@ -367,7 +367,7 @@ class Robot:
             vLeft = self.angularDiff[0]*R
             vRight = self.angularDiff[1]*R
             dS = (vLeft+vRight)/2
-            for i in range(1,6):
+            for i in range(5):
                 dtetap[i] = self.gyro*self.vrepDT*(1 + 0.05*i)
                 dXp[i] = dS*cos(tetaP[i]+dtetap[i]/2)
                 dYp[i] = dS*sin(tetaP[i]+dtetap[i]/2)
@@ -599,6 +599,10 @@ class Robot:
             return s
         else:
             return False
+
+    def debug(self, msg):
+        if (DEBUG):
+            print msg
 
     # salva dados em arquivo data.log, para plotar:
     # 'gnuplot -p script.plt'
