@@ -18,7 +18,7 @@ class DetetorDeProduto:
 		return numberCubes[color]
 	def detect(self):
 		# FIND IMAGE
-		image = cv2.imread("toto.jpeg")
+		image = cv2.imread("Heyh.jpeg")
 
 		grayFull = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
 		resized = imutils.resize(image,width=300)
@@ -31,6 +31,8 @@ class DetetorDeProduto:
 		cnts = cnts[0] if imutils.is_cv2() else cnts[1]
 		grayFull[grayFull == 0] = 1
 		rectangles = []
+		wToMean = 0
+		coutoursCounted = 0
 		for c in cnts:
 			#print "hello"
 			M = cv2.moments(c)
@@ -42,19 +44,24 @@ class DetetorDeProduto:
 				c = c.astype("int")
 				x,y,w,h = cv2.boundingRect(c)
 				if w > 250:
-					print w
+					wToMean+= w
+					coutoursCounted += 1
 					cv2.drawContours(grayFull, [c], -1, 0, -1)
 					pts = np.argwhere(grayFull == 0)
 					grayFull[grayFull == 0] = 1
 					rectangles.append((cX,cY,image[pts[:,0],pts[:,1]]))
+		wToMean = float(wToMean/coutoursCounted)
 		rectangles.sort(key=lambda tup: tup[1])
 		dc = DetetorDeColor()
-		limiares = [1250,1300,1300,1600,1800]
+		limiares = [1250,1300,1300,1600,1800] # para w = 380
+		limiaresToUse = []
+		for lim in limiares:
+			limiaresToUse.append(int(lim*wToMean/450))
 		numberCubes = [0,0,0,0,0,0,0,0]
 		for i,tupl in enumerate(rectangles):
 			rect = tupl[2]
 			names,counts = dc.find_color(rect)
 			for j in range(len(names)):
 				if counts[j]>= 20:
-					numberCubes[j] += int(counts[j]/limiares[i])+1
+					numberCubes[j] += int(counts[j]/limiaresToUse[i])+1
 		return numberCubes
