@@ -121,6 +121,10 @@ class Robot:
         self.pPlanner = Path.PathPlanner()
         print "initial pos = " + str(self.pos)
         self.pos, self.comandos = self.pPlanner.getPath(self.pos, self.destino)
+
+        if self.comandos[self.i] == Comando.ESQ or self.comandos[self.i] == Comando.DIR :
+            self.comandos.insert(0, Comando.RETO)
+
         print "comandos = " + str(self.comandos)
         print "finalPos = " + str(self.pos)
         self.i = -1
@@ -166,6 +170,10 @@ class Robot:
 
 
         if self.i == -1 or (self.bifurcacao and not self.sobreBifurcacao):
+
+            if self.i == -1:
+                print "PRIMEIRO COMANDO !"
+
             if self.ignoraProximaBifurcacao:
                 self.ignoraProximaBifurcacao = False
                 self.sobreBifurcacao = True
@@ -201,7 +209,7 @@ class Robot:
                     print "ESQUERDA"
                     self.andaRetoCount = 0
                 elif self.comandoAtual == Comando.RETO:
-                    if True in self.redVisionReading:
+                    if True in self.redVisionReading or self.i == 0 or self.commandos[self.i-1] == Comando.ROT:
                         print "RETO RED"
                         self.countdown = 5
                         self.comandoAtual = Comando.RETO
