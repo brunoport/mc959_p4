@@ -263,14 +263,14 @@ class Robot:
 
         # ## salvar dados de localizacao em arquivo para plotar
         #
-        # if self.count > 4 and self.count < 1000:
-        #     self.count += 1
+        if self.count > 14: # and self.count < 1000:
+            self.count += 1
         #     print "count = "+str(self.count)
         # elif self.count == 1000:
         #     self.count += 1
         #     self.writeFile(data)
 
-        if self.count % 10 == 0:
+        if self.count % 100 == 0:
             self.writeFile(data)
 
 
@@ -361,7 +361,7 @@ class Robot:
 
 
     def updatePose(self):
-        if (self.count < 5):
+        if (self.count < 15):        # inicia com gt
             self.pose = [self.robotPosition[0],self.robotPosition[1],self.robotOrientation[2]]
             for i in range(5):
                 xP[i],yP[i],tetaP[i] = [self.robotPosition[0],self.robotPosition[1],self.robotOrientation[2]]
@@ -371,13 +371,17 @@ class Robot:
             vLeft = self.angularDiff[0]*R
             vRight = self.angularDiff[1]*R
             dS = (vLeft+vRight)/2
+
+            ###############################
+            # apenas para plotar coeficientes em dteta
             for i in range(5):
-                dtetap[i] = self.gyro*self.vrepDT*(1 + 0.05*i)
+                dtetap[i] = self.gyro*self.vrepDT*(0.96 + 0.02*i)
                 dXp[i] = dS*cos(tetaP[i]+dtetap[i]/2)
                 dYp[i] = dS*sin(tetaP[i]+dtetap[i]/2)
                 xP[i] += dXp[i];
                 yP[i] += dYp[i];
                 tetaP[i] += dtetap[i];
+            ###############################
 
             dTeta = self.gyro*self.vrepDT
 
