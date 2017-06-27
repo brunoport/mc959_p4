@@ -13,7 +13,8 @@ R = 0.097;      # raio da roda em m
 L = 0.381;      # distancia entre as 2 rodas em m
 PI = 3.14159265359
 
-DEBUG = False
+DEBUG = True
+VELOCIDADE_RODA = 3
 
 data = []
 
@@ -129,9 +130,13 @@ class Robot:
         if self.comandos[0] == Comando.ESQ or self.comandos[0] == Comando.DIR:
             self.comandos.insert(0, Comando.RETO)
 
+        elif self.comandos[0] == Comando.ROT and (self.comandos[1] == Comando.ESQ or self.comandos[1] == Comando.DIR ):
+            self.comandos.insert(1, Comando.RETO)
+
         print "comandos = " + str(self.comandos)
         print "finalPos = " + str(self.pos)
         self.i = -1
+        self.stoppingAtRedMarker = False
 
 
 
@@ -242,7 +247,7 @@ class Robot:
         self.move(fator*vLeft, fator*vRight)
 
         if self.rotating:
-            self.debug("___ rotating "+str(self.rotating))
+            #self.debug("___ rotating "+str(self.rotating))
             vLeft, vRight = self.rotate180()
             self.move(vLeft, vRight)
         else:
@@ -266,9 +271,8 @@ class Robot:
             return self.rotate180()
 
         if self.stoppingAtRedMarker:
-            self.debug("DISTANCE FORWARD " + str(self.distanceForward()))
+            #self.debug("DISTANCE FORWARD " + str(self.distanceForward()))
             if abs(self.distanceForward()) < 0.005:
-                self.stoppingAtRedMarker = False
                 time.sleep(0.1) # espera o tranco
                 self.takePicture("Camera_Gondola")
                 self.comandoAtual = Comando.NONE
@@ -279,14 +283,14 @@ class Robot:
                 self.distanceAfterRedMarker = self.distanceAfterRedMarker + 0.02
             else:
                 self.distanceAfterRedMarker = self.distanceAfterRedMarker + self.distanceForward()
-            self.debug("ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker))
+            #self.debug("ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker))
             if self.distanceAfterRedMarker > 0.9:
                 self.debug("ANDOU 0.5")
                 return 0,0
 
 
         if self.comandoAtual==Comando.RETO:
-            return 2,2
+            return VELOCIDADE_RODA,VELOCIDADE_RODA
         if self.blackVisionReading[2] and not self.comandoAtual == Comando.ESQ:#direita
             self.andaRetoCount = 0
             return 2,1
@@ -296,12 +300,12 @@ class Robot:
 
         self.andaRetoCount += 1
 
-        if self.andaRetoCount ==13 and (self.comandoAtual == Comando.ESQ or self.comandoAtual == Comando.DIR):
+        if self.andaRetoCount ==20 and (self.comandoAtual == Comando.ESQ or self.comandoAtual == Comando.DIR):
             self.debug("ACABOU A BIFURCACAO #2")
             self.sobreBifurcacao = False
             self.comandoAtual = Comando.NONE
 
-        return 2,2
+        return VELOCIDADE_RODA,VELOCIDADE_RODA
 
 
     def move(self, leftMotorVelocity, rightMotorVelocity):
@@ -338,7 +342,7 @@ class Robot:
                 self.targetOrientation = PI/2
 
         if abs(self.pose[2] - self.targetOrientation) > 0.1:
-            self.debug("### precisa chega no 0 --> "+str(abs(self.pose[2] - self.targetOrientation)))
+            #self.debug("### precisa chega no 0 --> "+str(abs(self.pose[2] - self.targetOrientation)))
             return 1,-1
         else:
             self.debug("chegou!!!")
@@ -477,6 +481,11 @@ class Robot:
         print "PRODUTO : ", produto
         print "ESPERADOS : ", quantidadeEsperada
         print "ACHADOS : ", produtosAchados
+
+        if float(produtosAchados)/float(quantidadeEsperada) < 0.6:
+            print "PRECISA REPOR O PRODUTO ", produto
+        else:
+            print "EXPOSICAO CONFORME ESPERADO"
 
 
         #se a camera foi girada antes de tirar a foto, a gente a reposiciona depois de tirar a foto

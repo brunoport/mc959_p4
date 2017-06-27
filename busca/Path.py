@@ -48,8 +48,8 @@ class PathPlanner:
     def getPath(self,source,dest):
         mSource = mark[source]
         mDest = mark[dest]
-        print "mSource = "+str(mSource)
-        print "mDest = "+str(mDest)
+        #print "mSource = "+str(mSource)
+        #print "mDest = "+str(mDest)
         lastPos, solution = self.graph.actionsToObjective(mSource,mDest)
         lastPos = getSection(lastPos.getLabel())
         # print "solution = "+str(solution)
