@@ -12,6 +12,8 @@ R = 0.097;      # raio da roda em m
 L = 0.381;      # distancia entre as 2 rodas em m
 PI = 3.14159265359
 
+DEBUG = False
+
 data = []
 
 
@@ -114,15 +116,15 @@ class Robot:
         self.destino = self.pos
         while self.destino == self.pos:
             self.destino = self.rollSection()
-            print "DESTINO : ", self.destino
+            print "DESTINO : " + self.destino
 
     def sorteiaComandos(self):
         self.sorteiaDestino()
         self.pPlanner = Path.PathPlanner()
-        print "initial pos = " + str(self.pos)
+        self.debug("initial pos = " + str(self.pos))
         self.pos, self.comandos = self.pPlanner.getPath(self.pos, self.destino)
 
-        if self.comandos[self.i] == Comando.ESQ or self.comandos[self.i] == Comando.DIR :
+        if self.comandos[0] == Comando.ESQ or self.comandos[0] == Comando.DIR:
             self.comandos.insert(0, Comando.RETO)
 
         print "comandos = " + str(self.comandos)
@@ -132,7 +134,7 @@ class Robot:
 
 
     def resetFaixaASeguir(self):
-        print "RESET FAIXA"
+        self.debug("RESET FAIXA")
         self.faixaASeguir = 2;
 
     def run(self):
@@ -172,7 +174,7 @@ class Robot:
         if self.i == -1 or (self.bifurcacao and not self.sobreBifurcacao):
 
             if self.i == -1:
-                print "PRIMEIRO COMANDO !"
+                self.debug("PRIMEIRO COMANDO !")
 
             if self.ignoraProximaBifurcacao:
                 self.ignoraProximaBifurcacao = False
@@ -186,43 +188,43 @@ class Robot:
 
                 self.faixaASeguir-=1
                 self.sobreBifurcacao = True
-                print "BIFURCACAO " + str(self.bifurcacao)
-                print "COMANDO " + str(self.i) + " " + str(self.comandoAtual)
+                self.debug("BIFURCACAO " + str(self.bifurcacao))
+                self.debug("COMANDO " + str(self.i) + " " + str(self.comandoAtual))
 
 
 
                 if self.comandoAtual == Comando.ROT_CAM:
-                    print "ROTATE CAMERA"
+                    self.debug("ROTATE CAMERA")
                     self.rotateCamera()
                     self.i += 1
                     self.comandoAtual = self.comandos[self.i]
                     self.countdown = 1
 
                 if self.comandoAtual == Comando.ROT:
-                    print "ROTATION"
+                    self.debug("ROTATION")
                     self.rotate180()
                     self.i += 1
                     self.comandoAtual = self.comandos[self.i]
                     self.countdown = 1
 
                 elif self.comandoAtual == Comando.ESQ:
-                    print "ESQUERDA"
+                    self.debug("ESQUERDA")
                     self.andaRetoCount = 0
                     self.andaRetoCount = 0
                 elif self.comandoAtual == Comando.RETO:
                     if True in self.redVisionReading or self.i == 0 or self.comandos[self.i-1] == Comando.ROT:
-                        print "RETO RED"
+                        self.debug("RETO RED")
                         self.countdown = 5
                         self.comandoAtual = Comando.RETO
                     else:
-                        print "RETO NORMAL"
+                        self.debug("RETO NORMAL")
                         self.countdown =  5
                         self.ignoraProximaBifurcacao = True
                 elif self.comandoAtual == Comando.DIR:
-                    print "DIREITA"
+                    self.debug("DIREITA")
                     self.andaRetoCount = 0
                 elif self.comandoAtual == Comando.FOTO:
-                    print "TAKE PICTURE"
+                    self.debug( "TAKE PICTURE" )
                     self.countdown = 5
                     self.distanceAfterRedMarker = 0
                     self.stoppingAtRedMarker = True
@@ -231,14 +233,14 @@ class Robot:
         elif not self.bifurcacao:
             self.countdown -=1
         if self.countdown==0 and self.comandoAtual == Comando.RETO:
-            print "ACABOU A BIFURCACAO #1"
+            self.debug("ACABOU A BIFURCACAO #1")
             self.sobreBifurcacao = False
             self.comandoAtual = Comando.NONE
         vLeft, vRight = self.followLine()
         self.move(fator*vLeft, fator*vRight)
 
         if self.rotating:
-            print "___ rotating "+str(self.rotating)
+            self.debug("___ rotating "+str(self.rotating))
             vLeft, vRight = self.rotate180()
             self.move(vLeft, vRight)
         else:
@@ -262,7 +264,7 @@ class Robot:
             return self.rotate180()
 
         if self.stoppingAtRedMarker:
-            print "DISTANCE FORWARD ", self.distanceForward()
+            self.debug("DISTANCE FORWARD " + self.distanceForward())
             if abs(self.distanceForward()) < 0.005:
                 self.stoppingAtRedMarker = False
                 time.sleep(0.1) # espera o tranco
@@ -275,9 +277,9 @@ class Robot:
                 self.distanceAfterRedMarker = self.distanceAfterRedMarker + 0.02
             else:
                 self.distanceAfterRedMarker = self.distanceAfterRedMarker + self.distanceForward()
-            print "ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker)
+            self.debug("ANDANDO PARA PARAR NA FAIXA " + str(self.distanceAfterRedMarker))
             if self.distanceAfterRedMarker > 0.9:
-                print "ANDOU 0.5"
+                self.debug("ANDOU 0.5")
                 return 0,0
 
 
@@ -293,7 +295,7 @@ class Robot:
         self.andaRetoCount += 1
 
         if self.andaRetoCount ==13 and (self.comandoAtual == Comando.ESQ or self.comandoAtual == Comando.DIR):
-            print "ACABOU A BIFURCACAO #2"
+            self.debug("ACABOU A BIFURCACAO #2")
             self.sobreBifurcacao = False
             self.comandoAtual = Comando.NONE
 
@@ -334,10 +336,10 @@ class Robot:
                 self.targetOrientation = PI/2
 
         if abs(self.pose[2] - self.targetOrientation) > 0.1:
-            print "### precisa chega no 0 --> "+str(abs(self.pose[2] - self.targetOrientation))
+            self.debug("### precisa chega no 0 --> "+str(abs(self.pose[2] - self.targetOrientation)))
             return 1,-1
         else:
-            print "chegou!!!"
+            self.debug("chegou!!!")
             self.rotating = False
             return 0,0
 
@@ -440,7 +442,7 @@ class Robot:
                     return True
 
             if True in self.redVisionReading:
-                print "CHECK BIFURCATION : RED"
+                self.debug("CHECK BIFURCATION : RED")
                 return True
 
         return False
@@ -463,14 +465,14 @@ class Robot:
         im = im.rotate(180)
         im = im.transpose(I.FLIP_LEFT_RIGHT)
         im.save('images/' + visionSensorName + '.png', 'png')
-        print 'done!'
+        self.debug('done!')
 
         produto, quantidadeEsperada = self.rollProduct(self.destino)
 
         #tratar imagem
         dp = DetetorDeProduto.DetetorDeProduto()
         produtosAchados = dp.detectColor(produto)
-
+        print "PRODUTO : ", produto
         print "ESPERADOS : ", quantidadeEsperada
         print "ACHADOS : ", produtosAchados
 
@@ -546,7 +548,7 @@ class Robot:
                     print data
                     break
         i = random.randint(0,(len(data)-1)/2-1)
-        color = data[1+(2*i)]
+        color = int(data[1+(2*i)])
         amount = data[1+(2*i)+1]
         return color,amount
 
@@ -579,10 +581,14 @@ class Robot:
     # salva dados em arquivo data.log, para plotar:
     # 'gnuplot -p script.plt'
     def writeFile(self,data):
-        print "writing data to data.log..."
+        self.debug("writing data to data.log...")
         file = open("data.log","w")
         for d in data:
             [file.write(str(n)+' ') for n in d]
             file.write('\n')
         file.close()
-        print "finished writing file"
+        self.debug("finished writing file")
+
+    def debug(self, message):
+        if DEBUG:
+            print message
