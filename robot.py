@@ -14,6 +14,13 @@ PI = 3.14159265359
 
 data = []
 
+dtetap = [0,0,0,0,0]
+dXp = [0,0,0,0,0]
+dYp = [0,0,0,0,0]
+xP = [0,0,0,0,0]
+yP = [0,0,0,0,0]
+tetaP = [0,0,0,0,0]
+
 
 class Robot:
     """Classe robo do V-REP"""
@@ -229,7 +236,7 @@ class Robot:
         self.move(fator*vLeft, fator*vRight)
 
         if self.rotating:
-            print "___ rotating "+str(self.rotating)
+            # print "___ rotating "+str(self.rotating)
             vLeft, vRight = self.rotate180()
             self.move(vLeft, vRight)
         else:
@@ -238,12 +245,14 @@ class Robot:
 
         # ## salvar dados de localizacao em arquivo para plotar
         #
-        # if self.count > 4 and self.count < 1000:
-        #     self.count += 1
-        #     print "count = "+str(self.count)
-        # elif self.count == 1000:
-        #     self.count += 1
-        #     self.writeFile(data)
+        tCount = 500
+        if self.count > 4 and self.count < tCount:
+            self.count += 1
+            if self.count % 100 == 0:
+                print "save file in "+str(tCount-self.count)+" iterations"
+        elif self.count == tCount:
+            self.count += 1
+            self.writeFile(data)
 
 
 
@@ -273,13 +282,13 @@ class Robot:
 
 
         if self.comandoAtual==Comando.RETO:
-            return 2,2
+            return 3,3
         if self.blackVisionReading[2] and not self.comandoAtual == Comando.ESQ:#direita
             self.andaRetoCount = 0
-            return 2,1
+            return 3,1.5
         if self.blackVisionReading[0] and not self.comandoAtual == Comando.DIR:#esquerda
             self.andaRetoCount = 0
-            return 1,2
+            return 1.5,3
 
         self.andaRetoCount += 1
 
@@ -288,7 +297,7 @@ class Robot:
             self.sobreBifurcacao = False
             self.comandoAtual = Comando.NONE
 
-        return 2,2
+        return 3,3
 
 
     def move(self, leftMotorVelocity, rightMotorVelocity):
@@ -325,10 +334,10 @@ class Robot:
                 self.targetOrientation = PI/2
 
         if abs(self.pose[2] - self.targetOrientation) > 0.1:
-            print "### precisa chega no 0 --> "+str(abs(self.pose[2] - self.targetOrientation))
+            # print "### precisa chega no 0 --> "+str(abs(self.pose[2] - self.targetOrientation))
             return 1,-1
         else:
-            print "chegou!!!"
+            # print "chegou!!!"
             self.rotating = False
             return 0,0
 
@@ -336,11 +345,21 @@ class Robot:
     def updatePose(self):
         if (self.count < 5):
             self.pose = [self.robotPosition[0],self.robotPosition[1],self.robotOrientation[2]]
+            for i in range(5):
+                xP[i],yP[i],tetaP[i] = [self.robotPosition[0],self.robotPosition[1],self.robotOrientation[2]]
             self.count += 1
         else:
+
             vLeft = self.angularDiff[0]*R
             vRight = self.angularDiff[1]*R
             dS = (vLeft+vRight)/2
+            for i in range(5):
+                dtetap[i] = self.gyro*self.vrepDT*(1.05*i)
+                dXp[i] = dS*cos(tetaP[i]+dtetap[i]/2)
+                dYp[i] = dS*sin(tetaP[i]+dtetap[i]/2)
+                xP[i] += dXp[i];
+                yP[i] += dYp[i];
+                tetaP[i] += dtetap[i];
 
             dTeta = self.gyro*self.vrepDT
 
@@ -355,7 +374,7 @@ class Robot:
                 self.pose[2] = -PI+(self.pose[2]-PI);
             elif self.pose[2] < -PI:
                 self.pose[2] = PI-(self.pose[2]+PI);
-        data.append((self.pose[0],self.pose[1],self.robotPosition[0],self.robotPosition[1]))
+        data.append((self.pose[0],self.pose[1],self.robotPosition[0],self.robotPosition[1],xP[0],yP[0],xP[1],yP[1],xP[2],yP[2],xP[3],yP[3],xP[4],yP[4]))
         # print "------------------------------------------------"
         # print "> gt = "+str((self.robotPosition[0],self.robotPosition[1]))+" "+str(self.robotOrientation[2])
         # print "> odo= "+str(self.pose)
