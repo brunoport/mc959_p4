@@ -1,1 +1,1 @@
-plot 'data.log' using 1:2 title 'groundTruth' with lines, 'data.log' using 3:4 title 'odometry' with lines
+plot 'data.log' using 1:2 title 'groundTruth' with lines, 'data.log' using 3:4 title 'odometry (gyro*1)' with lines, 'data.log' using 5:6 title 'odometry (gyro*1.05)' with lines, 'data.log' using 7:8 title 'odometry (gyro*1.10)' with lines, 'data.log' using 9:10 title 'odometry (gyro*1.15)' with lines, 'data.log' using 11:12 title 'odometry (gyro*1.20)' with lines, 'data.log' using 13:14 title 'odometry (gyro*1.25)' with lines

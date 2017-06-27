@@ -254,13 +254,16 @@ class Robot:
 
         # ## salvar dados de localizacao em arquivo para plotar
         #
-        tCount = 500
+        tCount = 1000
         if self.count > 4 and self.count < tCount:
             self.count += 1
-            if self.count % 100 == 0:
-                print "save file in "+str(tCount-self.count)+" iterations"
-        elif self.count == tCount:
-            self.count += 1
+        #     if self.count % 100 == 0:
+        #         print "save file in "+str(tCount-self.count)+" iterations"
+        # elif self.count == tCount:
+        #     self.count += 1
+        #     self.writeFile(data)
+
+        if self.count % 10 == 0:
             self.writeFile(data)
 
 
@@ -362,15 +365,15 @@ class Robot:
             vLeft = self.angularDiff[0]*R
             vRight = self.angularDiff[1]*R
             dS = (vLeft+vRight)/2
-            for i in range(5):
-                dtetap[i] = self.gyro*self.vrepDT*(1.05*i)
+            for i in range(1,6):
+                dtetap[i] = self.gyro*self.vrepDT*(1 + 0.05*i)
                 dXp[i] = dS*cos(tetaP[i]+dtetap[i]/2)
                 dYp[i] = dS*sin(tetaP[i]+dtetap[i]/2)
                 xP[i] += dXp[i];
                 yP[i] += dYp[i];
                 tetaP[i] += dtetap[i];
 
-            dTeta = self.gyro*self.vrepDT
+            dTeta = self.gyro*self.vrepDT*1.05
 
             dX = dS*cos(self.pose[2]+dTeta/2);
             dY = dS*sin(self.pose[2]+dTeta/2);
@@ -383,7 +386,7 @@ class Robot:
                 self.pose[2] = -PI+(self.pose[2]-PI);
             elif self.pose[2] < -PI:
                 self.pose[2] = PI-(self.pose[2]+PI);
-        data.append((self.pose[0],self.pose[1],self.robotPosition[0],self.robotPosition[1],xP[0],yP[0],xP[1],yP[1],xP[2],yP[2],xP[3],yP[3],xP[4],yP[4]))
+        data.append((self.robotPosition[0],self.robotPosition[1],self.pose[0],self.pose[1],xP[0],yP[0],xP[1],yP[1],xP[2],yP[2],xP[3],yP[3],xP[4],yP[4]))
         # print "------------------------------------------------"
         # print "> gt = "+str((self.robotPosition[0],self.robotPosition[1]))+" "+str(self.robotOrientation[2])
         # print "> odo= "+str(self.pose)
